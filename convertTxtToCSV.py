@@ -86,4 +86,4 @@ def txt_to_csv_prog(txt_file, csv_file):
         df.to_csv(csv_file, index=False)
 
 
-txt_to_csv_prog('data/RateBeer/ratings/ratings.txt', 'data/RateBeer/ratings/ratings.csv')
+txt_to_csv_prog('data/BeerAdvocate/ratings/ratings.txt', 'data/BeerAdvocate/ratings/ratings.csv')
