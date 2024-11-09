@@ -1,4 +1,4 @@
-import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 from src.utils.evaluation_utils import *
 
@@ -293,3 +293,54 @@ def plot_score_difference(df_diff):
     plt.xlabel("User Location")
     plt.ylabel("Difference in Average Rating")
     plt.show()
+
+
+def plot_average_ratings_heatmap(df):
+    """
+    An exploratory function to see whether user from some specific country like beer from some specific other country
+    a lot
+    :param df: the ratings joined with user joined with breweries
+    :return: Nothing
+    """
+
+    # group by the location where the user comes from as well as the location the brewery is located
+    # then compute the mean rating for the combination
+    pivot_table = (
+        df.groupby(["user_location", "brewery_location"])["rating"].mean().unstack()
+    )
+
+    # plotting the heatmap
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(
+        pivot_table,
+        annot=False,
+        cbar_kws={"label": "Average Rating"},
+    )
+    plt.title("Average rating based on user and brewery location")
+    plt.xlabel("Brewery Location")
+    plt.ylabel("User Location")
+    plt.show()
+
+
+def find_best_and_worst_rating_combinations(df, threshold=1000):
+    # group by both locations, calculating both the number of ratings in the combination and the avg rating
+    average_ratings = (
+        df.groupby(["user_location", "brewery_location"])
+        .agg(avg_rating=("rating", "mean"), count_ratings=("rating", "size"))
+        .reset_index()
+    )
+
+    # for a combination to be valid we demand that there are at least 1000(/threshold)
+    # many ratings from that combination
+    filtered_ratings = average_ratings[average_ratings["count_ratings"] >= threshold]
+
+    # finding the pair with highest and lowest avg rating
+    worst_rating = filtered_ratings.loc[filtered_ratings["avg_rating"].idxmin()]
+    best_rating = filtered_ratings.loc[filtered_ratings["avg_rating"].idxmax()]
+
+    # print statistics
+    print("Combination with the worst average rating::")
+    print(worst_rating)
+
+    print("\nCombination with the best average rating:")
+    print(best_rating)
