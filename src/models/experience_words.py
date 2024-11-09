@@ -47,22 +47,6 @@ exp_words4 = [
 ]
 
 
-def load_data():
-    """
-    Loads data in pandas dataframes
-    :return: these dataframes
-    """
-    df_rb_ratings = pd.read_csv(
-        "C:/Users/nette/Dateistruktur/RWTH/Auslandssemester/ImSemester/CS-401 Applied Data "
-        "Analysis/Project/P2/Git/ada-2024-project-thefivedatawranglers/src/data/RateBeer/ratings/ratings.csv"
-    )
-    df_ba_ratings = pd.read_csv(
-        "C:/Users/nette/Dateistruktur/RWTH/Auslandssemester/ImSemester/CS-401 Applied Data "
-        "Analysis/Project/P2/Git/ada-2024-project-thefivedatawranglers/src/data/BeerAdvocate/ratings/BA_ratings.csv"
-    )
-    return df_rb_ratings, df_ba_ratings
-
-
 def get_experienced_users(df_ratings, exp_words):
     """
     Filters user_ids to those that are from experienced users, meaning that they've used

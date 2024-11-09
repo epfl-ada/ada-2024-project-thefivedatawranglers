@@ -3,21 +3,6 @@ import matplotlib.pyplot as plt
 from src.utils.evaluation_utils import *
 
 
-def load_user_data(
-    ba_path="../data/BeerAdvocate/ratings/BA_ratings.csv",
-    rb_path="../data/RateBeer/ratings/ratings.csv",
-):
-    """
-    Loads the users.csv for both datasets
-    :param ba_path: Path to the BeerAdvocate users.csv
-    :param rb_path: Path to the RateBeer users.csv
-    :return:
-    """
-    df_ba_users = pd.read_csv(ba_path)
-    df_rb_users = pd.read_csv(rb_path)
-    return df_ba_users, df_rb_users
-
-
 def calculate_ratings_by_location(df_users):
     """
     Calculates the number of ratings by each location in the users dataframe.
@@ -167,19 +152,6 @@ def plot_mean_rating_and_rating_count(df_plot, top50, log_scale=True):
 
     ax2.legend(loc="upper right")
     plt.show()
-
-
-def load_brewery(brewery_path="./data/RateBeer/breweries.csv"):
-    """
-    Loading the brewery dataset
-    :param brewery_path: Path to the breweries.csv
-    :return: the brewery dataset in a pandas df
-    """
-    df_brew = pd.read_csv(brewery_path)
-    df_brew.rename(
-        columns={"id": "brewery_id", "location": "brewery_location"}, inplace=True
-    )
-    return df_brew
 
 
 def merge_ratings_with_breweries(df_users_ratings, df_brew_us):
