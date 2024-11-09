@@ -52,10 +52,12 @@ def load_data():
     :return: these dataframes
     """
     df_rb_ratings = pd.read_csv(
-        "C:/Users/nette/Dateistruktur/RWTH/Auslandssemester/ImSemester/CS-401 Applied Data Analysis/Project/P2/Git/ada-2024-project-thefivedatawranglers/src/data/RateBeer/ratings/ratings.csv"
+        "C:/Users/nette/Dateistruktur/RWTH/Auslandssemester/ImSemester/CS-401 Applied Data "
+        "Analysis/Project/P2/Git/ada-2024-project-thefivedatawranglers/src/data/RateBeer/ratings/ratings.csv"
     )
     df_ba_ratings = pd.read_csv(
-        "C:/Users/nette/Dateistruktur/RWTH/Auslandssemester/ImSemester/CS-401 Applied Data Analysis/Project/P2/Git/ada-2024-project-thefivedatawranglers/src/data/BeerAdvocate/ratings/BA_ratings.csv"
+        "C:/Users/nette/Dateistruktur/RWTH/Auslandssemester/ImSemester/CS-401 Applied Data "
+        "Analysis/Project/P2/Git/ada-2024-project-thefivedatawranglers/src/data/BeerAdvocate/ratings/BA_ratings.csv"
     )
     return df_rb_ratings, df_ba_ratings
 
@@ -174,6 +176,9 @@ def plot_combined_distribution_and_rating_difference(plot_df, rating_diff_df):
     diff_plot_df = pd.DataFrame(
         {"Difference": plot_df["Experienced"] - plot_df["Inexperienced"]}
     )
+
+    # reindex the rating_diff_df to match plot_df's index
+    rating_diff_df = rating_diff_df.reindex(diff_plot_df.index).fillna(0)
 
     # create 2 subplots
     fig, axes = plt.subplots(2, 1, figsize=(15, 16), sharex=True)
