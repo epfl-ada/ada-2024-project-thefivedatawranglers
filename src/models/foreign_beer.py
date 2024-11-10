@@ -174,7 +174,7 @@ def foreign_beer_stats(df_users_ratings_brew):
     """
     Calculates some interesting statistics about the foreign/domestic beers
     :param df_users_ratings_brew: the result of merge_ratings_with_breweries
-    :return:
+    :return: number of foreign beers, number of domestic beers and also both expressed as relative percentages
     """
     # split df in foreign and domestic/own beers
     foreign_beers = df_users_ratings_brew[df_users_ratings_brew["foreign"]]
@@ -182,9 +182,9 @@ def foreign_beer_stats(df_users_ratings_brew):
     # the total amount of ratings
     total_ratings = len(df_users_ratings_brew)
     # ratio of foreign beers in the rating
-    foreign_percentage = (len(foreign_beers) / total_ratings) * 100
+    foreign_percentage = ratio_to_percentage(len(foreign_beers) / total_ratings)
     # ratio of domestic beers in the rating
-    own_percentage = (len(own_beers) / total_ratings) * 100
+    own_percentage = ratio_to_percentage(len(own_beers) / total_ratings)
     return len(foreign_beers), len(own_beers), foreign_percentage, own_percentage
 
 
@@ -212,7 +212,7 @@ def plot_foreign_vs_own_beer_counts(df_grouped_counts):
     """
     Plots the number of ratings for foreign/domestic beers over the countries.
     :param df_grouped_counts: result of grouped_counts
-    :return: Nothing
+    :return: Nothing (plots stuff)
     """
     df_grouped_counts.plot(kind="bar", stacked=True)
     plt.xlabel("User Location")
@@ -282,7 +282,7 @@ def plot_score_difference(df_diff):
     """
     Plots the difference between average domestic and foreign ratings grouped over user location.
     :param df_diff: The result of calculate_score_difference
-    :return: Nothing
+    :return: Nothing (plots stuff)
     """
     df_diff["difference"].plot(
         kind="bar",
@@ -300,7 +300,7 @@ def plot_average_ratings_heatmap(df):
     An exploratory function to see whether user from some specific country like beer from some specific other country
     a lot
     :param df: the ratings joined with user joined with breweries
-    :return: Nothing
+    :return: Nothing (plots stuff)
     """
 
     # group by the location where the user comes from as well as the location the brewery is located
@@ -323,6 +323,14 @@ def plot_average_ratings_heatmap(df):
 
 
 def find_best_and_worst_rating_combinations(df, threshold=1000):
+    """
+    A method used to find the pair of user-country and brewery-country with the lowest and highest avg score
+    :param df: the joined (ratings-user-brewery) dataframe
+    :param threshold: We use a threshold because if not we get for both best and worst a combination that is based on
+    just one rating. So we say for a combination to be legitimate there need to be at least 1000(/threshold) many
+    ratings in that combination.
+    :return: Nothing (prints stuff)
+    """
     # group by both locations, calculating both the number of ratings in the combination and the avg rating
     average_ratings = (
         df.groupby(["user_location", "brewery_location"])
