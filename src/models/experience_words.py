@@ -192,9 +192,7 @@ def plot_style_distribution(plot_df):
     plot_df.plot(kind="bar", alpha=0.7, figsize=(15, 8))
     plt.xlabel("Style")
     plt.ylabel("Probability")
-    plt.title(
-        "Distribution of beer styles between experienced / non-experienced users (normalized)"
-    )
+    plt.title("Distribution of beer styles between experienced / non-experienced users")
     plt.xticks(rotation=90)
     plt.tight_layout()
     plt.show()
