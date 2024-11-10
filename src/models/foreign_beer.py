@@ -1,6 +1,42 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 from src.utils.evaluation_utils import *
+import pandas as pd
+
+southern_states = [
+    "Alabama",
+    "Arkansas",
+    "Georgia",
+    "Louisiana",
+    "Mississippi",
+    "North Carolina",
+    "South Carolina",
+    "Tennessee",
+    "Texas",
+    "Virginia",
+    "Florida",
+    "Kentucky",
+    "Oklahoma",
+]
+northern_states = [
+    "Connecticut",
+    "Delaware",
+    "Illinois",
+    "Indiana",
+    "Iowa",
+    "Maine",
+    "Massachusetts",
+    "Michigan",
+    "Minnesota",
+    "New Hampshire",
+    "New Jersey",
+    "New York",
+    "Ohio",
+    "Pennsylvania",
+    "Rhode Island",
+    "Vermont",
+    "Wisconsin",
+]
 
 
 def calculate_ratings_by_location(df_users):
@@ -322,7 +358,7 @@ def plot_average_ratings_heatmap(df):
     plt.show()
 
 
-def find_best_and_worst_rating_combinations(df, threshold=1000):
+def best_and_worst_combinations(df, threshold=1000):
     """
     A method used to find the pair of user-country and brewery-country with the lowest and highest avg score
     :param df: the joined (ratings-user-brewery) dataframe
@@ -352,3 +388,178 @@ def find_best_and_worst_rating_combinations(df, threshold=1000):
 
     print("\nCombination with the best average rating:")
     print(best_rating)
+
+
+def filter_to_us_users(df_users):
+    """
+    This filters the user dataframe to only those entries that come from a US state
+    :param df_users: the user dataframe in question
+    :return: the filtered dataframe
+    """
+    df_us_only = df_users.copy()
+    mask = df_us_only["location"].str.contains("United States, ", na=False)
+    return df_us_only[mask]
+
+
+def prepare_datasets(df_rb_users, df_ba_users, df_rb_ratings, df_ba_ratings):
+    """
+    This is the first preparation step for the "inner-US" analysis.
+    It joins the users with the ratings datasets and performs some structural changes.
+    :param df_rb_users: the RateBeer users dataset
+    :param df_ba_users: the BeerAdvocate users dataset
+    :param df_rb_ratings: the RateBeer ratings dataset (presumably without the text column)
+    :param df_ba_ratings: the BeerAdvocate ratings dataset (presumably without the text column)
+    :return: 2 joined and changed dataframes
+    """
+    # in this analysis we're only interested in users from th US
+    df_rb_users_us_only = filter_to_us_users(df_rb_users)
+    df_ba_users_us_only = filter_to_us_users(df_ba_users)
+
+    # we drop the nbr_reviews column as it is not present in the RateBeer dataset
+    df_ba_users_us_only.drop(columns=["nbr_reviews"], inplace=True)
+    # we add a column to specify from which dataset an entry comes
+    # I don't think we will actually need this, but it also doesn't hurt
+    df_ba_users_us_only["dataset"] = "BeerAdvocate"
+    df_rb_users_us_only["dataset"] = "RateBeer"
+
+    # joining with the ratings datasets
+    df_ba_users_ratings_us_only = merge_users_and_ratings(
+        df_ba_ratings, df_ba_users_us_only
+    )
+    df_rb_users_ratings_us_only = merge_users_and_ratings(
+        df_rb_ratings, df_rb_users_us_only
+    )
+
+    # some stats never hurt
+    print(
+        "Number of ratings from US from BeerAdvocate:", len(df_ba_users_ratings_us_only)
+    )
+    print("Number of ratings from US from RateBeer:", len(df_rb_users_ratings_us_only))
+
+    return df_rb_users_ratings_us_only, df_ba_users_ratings_us_only
+
+
+def merge_with_brewery(
+    df_rb_users_ratings_us_only, df_ba_users_ratings_us_only, df_rb_brew, df_ba_brew
+):
+    """
+    Merges the already joined (ratings-users) dataset further with the brewery dataset.
+    Then concatenates both to create the one dataframe containing all the US-data
+     from both BeerAdvocate and BeerAdvocate
+    :param df_rb_users_ratings_us_only: first return value of prepare_datasets
+    :param df_ba_users_ratings_us_only: second return value of prepare_datasets
+    :param df_rb_brew: the RateBeer brewery dataset
+    :param df_ba_brew: the BeerAdvocate brewery dataset
+    :return:
+    """
+
+    # joining with brewery data
+    df_rb_users_ratings_brew_us_only = merge_ratings_with_breweries(
+        df_rb_users_ratings_us_only, df_rb_brew
+    )
+    df_ba_users_ratings_brew_us_only = merge_ratings_with_breweries(
+        df_ba_users_ratings_us_only, df_ba_brew
+    )
+
+    # concat both dfs
+    df_us_only = pd.concat(
+        [df_rb_users_ratings_brew_us_only, df_ba_users_ratings_brew_us_only],
+        ignore_index=True,
+    )
+    # stats
+    print("Number of ratings from US:", len(df_us_only))
+
+    return df_us_only
+
+
+def avg_ratings_us(df_us_only):
+    """
+    Prints the average rating given by US-citizens to beer from the US as well as the average
+    rating given by US-citizens to beer that is not from the US
+    :param df_us_only: the return val of merge_with_brewery
+    :return: the same df given as an input but with the additional flag "is_us_beer"
+    """
+    mask = df_us_only["brewery_location"].str.contains("United States, ", na=False)
+    # the foreign column now only tells, whether the beer comes from the exact same US state or not
+    # maybe this will be interesting for future analyses, but I will add a new column called "is_us_beer"
+    # containing the information whether the beer comes from the US
+    df_us_only["is_us_beer"] = mask
+
+    avg_ratings = df_us_only.groupby("is_us_beer")["rating"].mean()
+    print("Avg rating for US beer:", avg_ratings[True])
+    print("Avg rating for non-US beer:", avg_ratings[False])
+
+    return df_us_only
+
+
+def avg_ratings_per_location_us(df_us_only):
+    """
+    Computes the average ratings for both foreign and US beer for all the US states individually.
+    Then it calculates the difference between both in order to later plot these differences.
+    :param df_us_only: the return val of avg_ratings_us
+    :return: the average rating differences for both foreign and US beer for all the US states
+    """
+    # we rename the user location to contain just the states name, as every user location is in the US by now
+    df_us_only["user_location"] = df_us_only["user_location"].str.replace(
+        "United States, ", "", regex=False
+    )
+    # compute the average ratings for both foreign and US beer for all the US states
+    avg_ratings_per_location = (
+        df_us_only.groupby(["user_location", "is_us_beer"])["rating"].mean().unstack()
+    )
+    # calculate the differences
+    avg_ratings_per_location["Difference"] = (
+        avg_ratings_per_location[True] - avg_ratings_per_location[False]
+    )
+
+    return avg_ratings_per_location
+
+
+def plot_avg_ratings_per_location(avg_ratings_per_location):
+    """
+    Plots the results of avg_ratings_per_location_us
+    :param avg_ratings_per_location: return val of avg_ratings_per_location_us
+    :return: Nothing (plots stuff)
+    """
+    plt.figure(figsize=(10, 6))
+    plt.bar(
+        avg_ratings_per_location.index,
+        avg_ratings_per_location["Difference"],
+        color="purple",
+    )
+    plt.xlabel("User Location")
+    plt.ylabel("Difference in Average Rating (US Beer - Non-US Beer)")
+    plt.title("Difference in Average Ratings by User Location (US Beer vs Non-US Beer)")
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.show()
+
+
+def north_south_avg(df_us_only):
+    """
+    Creates a table for the avg ratings for northern US states and southern US states (and others that are neither)
+    for both US beer and Non-US beer
+    :param df_us_only: the return val of avg_ratings_us
+    :return: the table containing those averages
+    """
+    # add a column "region" that can be "South" for a southern state where the user comes from
+    # "North" for a northern state where the user comes from, or "Other" otherwise
+    df_us_only["region"] = df_us_only["user_location"].apply(
+        lambda x: (
+            "South"
+            if x in southern_states
+            else ("North" if x in northern_states else "Other")
+        )
+    )
+
+    # create the average rating for each group
+    average_ratings = (
+        df_us_only.groupby(["region", "is_us_beer"])["rating"].mean().unstack()
+    )
+    # until now the columns are called True for is_us_beer=True and False for is_us_beer=False
+    # renaming that for better readability
+    average_ratings = average_ratings.rename(
+        columns={False: "Foreign Beer", True: "US Beer"}
+    )
+
+    return average_ratings

@@ -161,4 +161,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-src/data/
+src/data/BeerAdvocate/
+src/data/matched_beer_data/
+src/data/RateBeer/
