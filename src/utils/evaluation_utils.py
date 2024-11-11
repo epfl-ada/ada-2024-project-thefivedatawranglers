@@ -17,3 +17,5 @@ colors = [
     "#ca6702",
     "#bb3e03",
 ]
+
+colors_rating_distribution = ["blue", "red", "purple", "brown", "hotpink", "cyan", "gold", "darkgreen", "violet", "chocolate"]

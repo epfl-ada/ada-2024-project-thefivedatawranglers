@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 
-
 def load_rating_wo_text(path):
     """
     Load a ratings dataset without the text column
@@ -14,8 +13,8 @@ def load_rating_wo_text(path):
 
 
 def load_user_data(
-    ba_path="../data/BeerAdvocate/ratings/BA_ratings.csv",
-    rb_path="../data/RateBeer/ratings/ratings.csv",
+    ba_path="data/BeerAdvocate/users.csv",
+    rb_path="data/RateBeer/users.csv",
 ):
     """
     Loads the users.csv for both datasets
@@ -42,22 +41,17 @@ def load_brewery_data(brewery_path="./data/RateBeer/breweries.csv"):
     return df_brew
 
 
-def load_rating_data():
+def load_rating_data(
+    ba_path="data/BeerAdvocate/BA_ratings.csv",
+    rb_path="data/RateBeer/RB_ratings.csv",
+):
     """
     Loads rating data in pandas dataframes
     :return: these dataframes
     """
-    df_rb_ratings = pd.read_csv(
-        "C:/Users/nette/Dateistruktur/RWTH/Auslandssemester/ImSemester/CS-401 Applied Data "
-        "Analysis/Project/P2/Git/ada-2024-project-thefivedatawranglers/src/data/RateBeer/ratings/ratings.csv"
-    )
-    df_ba_ratings = pd.read_csv(
-        "C:/Users/nette/Dateistruktur/RWTH/Auslandssemester/ImSemester/CS-401 Applied Data "
-        "Analysis/Project/P2/Git/ada-2024-project-thefivedatawranglers/src/data/BeerAdvocate/ratings/BA_ratings.csv"
-    )
-    return df_rb_ratings, df_ba_ratings
-
-
+    df_ba_ratings = pd.read_csv(ba_path)
+    df_rb_ratings = pd.read_csv(rb_path)
+    return df_ba_ratings, df_rb_ratings
 class SomeDataset(Dataset):
     """
     A dataset implements 2 functions
