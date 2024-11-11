@@ -59,16 +59,15 @@ def rating_evolution_over_time(df, df_name, bucket=rating_buckets, min_ratings=1
     
     
 # Function for filtering and diplaying the change in reviewers rating over time
-def rating_evolution_with_rating_number(df, user_df, df_name, colors=colors_rating_distribution, bucket=rating_buckets, nr_reviews=300):
+def rating_evolution_with_rating_number(df, df_name, colors=colors_rating_distribution, bucket=rating_buckets, nr_reviews=300):
     
     # Cleaning and merging dataframes
     df_cleaned = df.dropna(subset=['rating'])[1:]
     df_cleaned['rating'] = df_cleaned['rating'].astype(float) # tranforms all ratings to int
-    df_merged = df_cleaned.merge(user_df, how='inner', on='user_id')
-    df_merged[['user_id', 'rating', 'date']].drop_duplicates()
+    df_cleaned[['user_id', 'rating', 'date']].drop_duplicates()
     
     # Sorts the DataFrame by user and date to ensure correct order of ratings and adds column for rating number for respective user
-    df_sorted= df_merged.sort_values(by=['user_id', 'date'])
+    df_sorted= df_cleaned.sort_values(by=['user_id', 'date'])
     df_sorted['rating_order'] = df_sorted.groupby('user_id').cumcount() + 1
 
     # Uses a cutoff for amount of ratings, applies buckets to dataframe and calculates distribution
