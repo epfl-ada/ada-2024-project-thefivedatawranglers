@@ -43,20 +43,30 @@ def top10beers_ratings (df_ratings,df_nb_ratings,df_name):
     plt.figure(figsize=(6, 6))
     sns.boxplot(x='beer_id', y='ratings', data=top10_ratings_df)
     plt.xticks(rotation=90)  # Rotate x-axis labels for readability
-    plt.ylim(3.2,5.1)
+    y_min = top10_ratings_df['ratings'].min() - 0.1  # Adding a buffer for better visibility
+    y_max = top10_ratings_df['ratings'].max() + 0.1
+    plt.ylim(y_min, y_max)
+    plt.ylabel('Ratings')
     plt.title(f'Distribution of General Ratings for {df_name}')
     plt.show()
 
     plt.figure(figsize=(6, 6))
     sns.boxplot(x='beer_id', y='ratings', data=experienced_reviewers)
     plt.xticks(rotation=90)  # Rotate x-axis labels for readability
-    plt.ylim(3.2,5.1)
+    y_min = experienced_reviewers['ratings'].min() - 0.1  # Adding a buffer for better visibility
+    y_max = experienced_reviewers['ratings'].max() + 0.1
+    plt.ylim(y_min, y_max)
+    plt.ylabel('Ratings')
     plt.title(f'Distribution of Experienced Ratings for {df_name}')
     plt.show()
 
     plt.figure(figsize=(6, 6))
     sns.boxplot(x='beer_id', y='ratings', data=new_reviewers)
     plt.xticks(rotation=90)  # Rotate x-axis labels for readability
-    plt.ylim(3.2,5.1)
+    y_min = new_reviewers['ratings'].min() - 0.1  # Adding a buffer for better visibility
+    y_max = new_reviewers['ratings'].max() + 0.1
+    plt.ylim(y_min, y_max)
+    plt.ylabel('Ratings')
     plt.title(f'Distribution of New Ratings for {df_name}')
     plt.show()
+    plt.close()
