@@ -43,19 +43,16 @@ def top10beers_ratings (df_ratings,df_nb_ratings,df_name):
     plt.figure(figsize=(6, 6))
     ax = sns.boxplot(x='beer_name', y='ratings', data=top10_ratings_df)
     plt.xticks(rotation=90)  # Rotate x-axis labels for readability
-    plt.ylabel('Ratings')
     plt.title(f'Distribution of General Ratings for {df_name}')
 
     plt.figure(figsize=(6, 6))
     ax = sns.boxplot(x='beer_name', y='ratings', data=experienced_reviewers)
     plt.xticks(rotation=90)  # Rotate x-axis labels for readability
-    plt.ylabel('Ratings')
     plt.title(f'Distribution of Experienced Ratings for {df_name}')
 
     plt.figure(figsize=(6, 6))
     ax = sns.boxplot(x='beer_name', y='ratings', data=new_reviewers)
     plt.xticks(rotation=90)  # Rotate x-axis labels for readability
-    plt.ylabel('Ratings')
     plt.title(f'Distribution of New Ratings for {df_name}')
 
     y_min, y_max = ax.get_ylim()  # Automatically determines y-axis limits
