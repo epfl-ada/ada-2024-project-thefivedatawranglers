@@ -6,7 +6,7 @@ experience_threshold = 15  # Can be changed. Defines experience
 
 
 def top10beers_ratings(df_ratings, df_nb_ratings, df_name):
-    # Selecting the wanted columns and creating new df for BeerAdvocate for ratings:
+    # Selecting the wanted columns and creating new df for ratings:
     filtered_ratings_df = pd.DataFrame(
         {
             "user_id": df_ratings["user_id"],
@@ -25,10 +25,10 @@ def top10beers_ratings(df_ratings, df_nb_ratings, df_name):
         }
     )
 
-    # Merging BA ratings with the respective BA users_df using the 'user_id' column
+    # Merging the ratings with their respective BA or RB users_df via the 'user_id' column
     filtered_ratings_df = pd.merge(users_df, filtered_ratings_df, on="user_id")
 
-    # Classifying by the number of reviews per beer for BA
+    # Classifying by the number of reviews given per beer
     valuecount = pd.DataFrame(
         filtered_ratings_df["beer_name"].value_counts().reset_index()
     )
@@ -37,19 +37,22 @@ def top10beers_ratings(df_ratings, df_nb_ratings, df_name):
     # Saving the 10 most reviewed beers
     top_10_beers = valuecount.head(10)
 
-    # Selecting the rows from BA ratings that match with the Top_10 BA respectively
+    # Selecting the rows from the BA or RB ratings that match with the Top_10 BA or RB respectively
     top10_ratings_df = filtered_ratings_df[
         filtered_ratings_df["beer_name"].isin(top_10_beers["beer_name"])
     ]
 
-    # Sharing the BA Top10_ratings between experienced and new reviewers. The experience_threshold is used as separation
-    # Sharing for BA
+    # Sharing the Top10_ratings between experienced and new reviewers. The experience_threshold is used as separation
 
     top10_ratings_df.insert(5, "Experience", "Experienced")
 
     top10_ratings_df.loc[
         top10_ratings_df["nb_ratings"] < experience_threshold, "Experience"
     ] = "New"
+
+    top10_ratings_copy_df = top10_ratings_df.copy(deep=True)
+    top10_ratings_copy_df["Experience"] = "All"
+    top10_ratings_df = pd.concat([top10_ratings_df, top10_ratings_copy_df])
 
     fig, ax1 = plt.subplots(figsize=(12, 6))
     ax = sns.boxplot(
