@@ -116,6 +116,7 @@ def get_users_with_min_exp_words(df_ratings_exp, exp_words, min_word_count=5):
         .size()
         .unstack(fill_value=0)
     )
+
     return word_counts[word_counts.gt(0).sum(axis=1) >= min_word_count].index
 
 

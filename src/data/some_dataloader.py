@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 
+
 def load_rating_wo_text(path):
     """
     Load a ratings dataset without the text column
@@ -52,6 +53,8 @@ def load_rating_data(
     df_ba_ratings = pd.read_csv(ba_path)
     df_rb_ratings = pd.read_csv(rb_path)
     return df_ba_ratings, df_rb_ratings
+
+
 class SomeDataset(Dataset):
     """
     A dataset implements 2 functions

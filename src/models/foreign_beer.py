@@ -2,6 +2,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from src.utils.evaluation_utils import *
 import pandas as pd
+from plotly.subplots import make_subplots
+from plotly import graph_objects as go
+
 
 southern_states = [
     "Alabama",
@@ -74,17 +77,59 @@ def cutoff_and_sort(df_sum_rat_foreign, cutoff=2000):
     return df_sum_rat_cutoff.sort_values(ascending=False)  # sort
 
 
-def plot_location_ratings(df_sum_rat_cutoff):
+def plot_location_ratings(df_sum_rat, cutoff=2000):
     """
+    Reduces to only those countries with more than 2000(/cutoff) many ratings.
+    Then it sorts the countries by the number of ratings coming from these countries.
     Plots the number of ratings from the remaining locations.
     :param df_sum_rat_cutoff: result of cutoff_and_sort
     :return: Nothing
     """
-    df_sum_rat_cutoff.plot(kind="bar", color=colors[: len(df_sum_rat_cutoff)])
-    plt.xlabel("Location")
-    plt.ylabel("Number of ratings")
-    plt.title("Number of ratings from users from different locations")
-    plt.show()
+
+    df_sum_rat = df_sum_rat.to_frame()
+    df_sum_rat.insert(0, "location", df_sum_rat.index)
+    df_sum_rat.reset_index(drop=True, inplace=True)
+    df_sum_rat.sort_values(ascending=False, by="nbr_ratings", inplace=True)
+
+    df_sum_rat_cutoff = df_sum_rat[df_sum_rat["nbr_ratings"] > cutoff]
+
+    rows = 1
+    cols = 2
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        specs=[[{"type": "xy"}, {"type": "choropleth"}]],
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=df_sum_rat_cutoff["location"],
+            y=df_sum_rat_cutoff["nbr_ratings"],
+            marker=dict(color=colors * (len(df_sum_rat_cutoff) + 1 // len(colors))),
+        ),
+        row=1,
+        col=1,
+    )
+    fig.update_yaxes(
+        title_text="Number of reviews in logarthmic scale", type="log", row=1, col=1
+    )
+
+    fig.add_trace(
+        go.Choropleth(
+            locations=df_sum_rat["location"],
+            locationmode="country names",
+            z=df_sum_rat["nbr_ratings"],
+            text="Number of reviews on linear scale",
+        ),
+        row=1,
+        col=2,
+    )
+
+    fig.update_layout(
+        title_text="Number of ratings per country",
+    )
+
+    fig.show()
 
 
 def merge_users_and_ratings(df_ratings, df_users):
@@ -144,11 +189,54 @@ def plot_mean_rating_by_location(df_plot):
     :param df_plot: result of avg_rating_by_location
     :return: Nothing
     """
-    df_plot.plot(kind="bar", color=colors[: len(df_plot)])
-    plt.xlabel("Location")
-    plt.ylabel("Average rating")
-    plt.title("Average rating given by users from different locations")
-    plt.show()
+    # df_plot.plot(kind="bar", color=colors[: len(df_plot)])
+    # plt.xlabel("Location")
+    # plt.ylabel("Average rating")
+    # plt.title("Average rating given by users from different locations")
+    # plt.show()
+
+    df_plot = df_plot.to_frame()
+    df_plot.insert(0, "location", df_plot.index)
+    df_plot.reset_index(drop=True, inplace=True)
+    df_plot.sort_values(ascending=False, by="rating", inplace=True)
+
+    rows = 1
+    cols = 2
+    fig = make_subplots(
+        rows=rows,
+        cols=cols,
+        specs=[[{"type": "xy"}, {"type": "choropleth"}]],
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=df_plot["location"],
+            y=df_plot["rating"],
+            marker=dict(color=colors * (len(df_plot) + 1 // len(colors))),
+        ),
+        row=1,
+        col=1,
+    )
+    fig.update_yaxes(
+        title_text="Average rating in logarthmic scale", type="log", row=1, col=1
+    )
+
+    fig.add_trace(
+        go.Choropleth(
+            locations=df_plot["location"],
+            locationmode="country names",
+            z=df_plot["rating"],
+            text="Average rating on linear scale",
+        ),
+        row=1,
+        col=2,
+    )
+
+    fig.update_layout(
+        title_text="Average Rating Per Country",
+    )
+
+    fig.show()
 
 
 def plot_mean_rating_and_rating_count(df_plot, top50, log_scale=True):
@@ -162,8 +250,8 @@ def plot_mean_rating_and_rating_count(df_plot, top50, log_scale=True):
     :param log_scale: boolean whether to plot the count in a log scale or linear
     :return: Nothing
     """
-    fig, ax1 = (
-        plt.subplots()
+    fig, ax1 = plt.subplots(
+        figsize=(12, 4), dpi=100
     )  # need subplots for barchart and line chart showing number of ratings from that country
     # plotting the bar chart
     df_plot.plot(kind="bar", color=colors[: len(df_plot)], ax=ax1)
@@ -250,7 +338,9 @@ def plot_foreign_vs_own_beer_counts(df_grouped_counts):
     :param df_grouped_counts: result of grouped_counts
     :return: Nothing (plots stuff)
     """
-    df_grouped_counts.plot(kind="bar", stacked=True)
+    fig, ax1 = plt.subplots(figsize=(12, 4), dpi=100)
+
+    df_grouped_counts.plot(kind="bar", stacked=True, ax=ax1)
     plt.xlabel("User Location")
     plt.ylabel("Proportion of Ratings")
     plt.title("Proportion of Ratings by User Location (Foreign vs. Non-Foreign Beers)")

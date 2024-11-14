@@ -164,3 +164,8 @@ cython_debug/
 src/data/BeerAdvocate/
 src/data/matched_beer_data/
 src/data/RateBeer/
+
+
+data/BeerAdvocate/
+data/matched_beer_data/
+data/RateBeer/
