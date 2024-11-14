@@ -84,7 +84,6 @@ def rating_evolution_with_rating_number(
     bucket=rating_buckets,
     nr_reviews=300,
 ):
-    fig = plt.figure(figsize=(12, 6))
     # Cleaning and merging dataframes
     df_cleaned = df.dropna(subset=["rating"])[1:]
     df_cleaned["rating"] = df_cleaned["rating"].astype(
@@ -116,7 +115,7 @@ def rating_evolution_with_rating_number(
     ).fillna(0)
 
     # Create the plot with two y-axes
-    fig, ax1 = plt.subplots()
+    fig, ax1 = plt.subplots(figsize=(12, 6))
 
     # First plot (stacked bar plot for relative distribution)
     pivot_df.plot(kind="bar", stacked=True, ax=ax1, color=colors)

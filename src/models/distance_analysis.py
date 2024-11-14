@@ -216,9 +216,9 @@ def plot_distance_ratings(
         .size()
         .reset_index(name="count")
     )
-    df_amount["percentage"] = df_amount.groupby("distance_user_brewery_buckets")[
-        "count"
-    ].transform(lambda x: x / x.sum())
+    df_amount["percentage"] = df_amount.groupby(
+        "distance_user_brewery_buckets", observed=False
+    )["count"].transform(lambda x: x / x.sum())
 
     # Pivots the data for stacked bar plot
     pivot_df = df_amount.pivot(
@@ -250,9 +250,9 @@ def plot_distance_ratings(
     ax2 = ax1.twinx()
 
     # Aggregate the total number of responses for each rating order
-    response_count = df_filtered.groupby("distance_user_brewery_buckets")[
-        user_column
-    ].count()
+    response_count = df_filtered.groupby(
+        "distance_user_brewery_buckets", observed=False
+    )[user_column].count()
     ax2.plot(
         np.arange(0, len(response_count), 1),
         response_count.values,
