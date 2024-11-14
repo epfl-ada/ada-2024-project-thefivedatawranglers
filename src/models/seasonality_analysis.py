@@ -86,7 +86,7 @@ def plot_beer_style_ranking_by_amount(df, cutoff = 500, interesting_threshhold =
 
     fig.show()
 
-def plot_and_head_average_rating_per_month(df, cutoff = 500, interesting_threshhold = 0.1):
+def plot_beer_style_ranking_by_avg_score(df, cutoff = 500, interesting_threshhold = 0.1):
     """
     Calculate the average rating per month
     :param df: df_rb_ratings
