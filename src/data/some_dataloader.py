@@ -1,7 +1,4 @@
-import torch
-import numpy as np
 import pandas as pd
-from torch.utils.data import DataLoader, Dataset
 
 
 def load_rating_wo_text(path):
@@ -43,8 +40,8 @@ def load_brewery_data(brewery_path="./data/RateBeer/breweries.csv"):
 
 
 def load_rating_data(
-    ba_path="src/data/BeerAdvocate/ratings/BA_ratings.csv",
-    rb_path="src/data/RateBeer/ratings/RB_ratings.csv",
+    ba_path="data/BeerAdvocate/ratings/BA_ratings.csv",
+    rb_path="data/RateBeer/ratings/RB_ratings.csv",
 ):
     """
     Loads rating data in pandas dataframes
@@ -53,24 +50,3 @@ def load_rating_data(
     df_ba_ratings = pd.read_csv(ba_path)
     df_rb_ratings = pd.read_csv(rb_path)
     return df_ba_ratings, df_rb_ratings
-
-
-class SomeDataset(Dataset):
-    """
-    A dataset implements 2 functions
-        - __len__  (returns the number of samples in our dataset)
-        - __getitem__ (returns a sample from the dataset at the given index idx)
-    """
-
-    def __init__(self, dataset_parameters, **kwargs):
-        super().__init__()
-        # ...
-
-
-class SomeDatamodule(DataLoader):
-    """
-    Allows you to sample train/val/test data, to later do training with models.
-    """
-
-    def __init__(self):
-        super().__init__()
