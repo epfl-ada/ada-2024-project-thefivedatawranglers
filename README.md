@@ -16,11 +16,11 @@ Therefore, in our data analysis, we aim to determine which factors related to th
 
 We primarily focus on three factors that could influence beer ratings:
 
-1. Does the **beer’s country of origin and the user’s country** influence the rating? Could it be that in some countries, due to patriotism, domestic beers are rated more favorably than foreign ones? Do consumers from certain countries rate beers from specific other countries particularly poorly or well? Could there be an apparent bias with distance when rating beers?
+1. Does the **beer’s country of origin and the user’s country** influence the rating? Could it be that in some countries domestic beers are rated more favorably than foreign ones? Do consumers from certain countries rate beers from specific other countries particularly well? Could there be a bias with distance when rating beers?
 
-2. Does the **time of year** the beer is consumed affect the rating? In particular, the season could be of interest. Are there beers that are consumed much more at certain times of the year, and are these beers also rated more favorably during that time? Companies could adjust the output of their beers accordingly, and consumers could base their purchase decisions on this information.
+2. Does the **time of year** the beer is consumed affect the rating? Are there beers that are consumed much more at certain times of the year, and are these beers also rated more favorably during that time?
 
-3. Does a **reviewer’s experience** with beer influence their ratings? Are there perhaps beers or beer styles that appeal to a “beginner” who doesn’t drink much beer, but may not appeal as much to more experienced users? Does the standard for beer generally increase with experience? Depending on the results, consumers might consider the ratings of the experience group they identify with.
+3. Does a **reviewer’s experience** with beer influence their ratings? Are there perhaps beers or beer styles that appeal to a “beginner” who doesn’t drink much beer, but may not appeal as much to more experienced users? Does the standard for beer increase with experience?
 
 ---
 
@@ -34,28 +34,32 @@ We primarily focus on three factors that could influence beer ratings:
 
 ### Data Cleaning
 
-In order to easily analyze the data, we first need to convert the ratings and reviews txt files to csv files by running the txt_to_csv method in the convertTxtToCSV notebook.
+In order to easily analyze the data, we first convert the ratings and reviews txt files to csv files by running the txt_to_csv method in the convertTxtToCSV notebook.
 Then, for some of the analyses, individual data cleaning was carried out. For the patriotism analysis, for example, we assigned the location “USA” to all US states, while for the USA internal analysis we filtered duplicate ratings from the two datasets.
 
 ### Investigating Locational Biases
 
-To assess the impact of a beer’s origin we need to join the ratings with the users.csv and the brewery.csv. Using the location of the user and the brewery we can tell for every rating whether it’s about a “domestic” or “foreign” beer for the reviewer.
+To assess the impact of a beer’s origin we need to join the ratings with the users.csv and the brewery.csv. Using the location of the user and the brewery we can tell for every rating whether it’s a “domestic” or “foreign” beer for the reviewer.
 Then, we can examine different statistics for these groups. Grouping the beers by the user’s country, allows us to see how these vary by country and identify any countries with significant differences.
 Lastly, we can investigate if certain countries have a particularly favorable or unfavorable view of beers from a specific other country by grouping first by the user’s country and then by the country of the beer’s origin.
 As a more fine-granular assessment of the locational biases we also consider the distance between the user’s location and the brewery’s location. To be able to process the given countries, we rely on the Web-API Nominatim to convert the given countries to longitude and latitude and subsequently calculate the distances.
 
 ### Investigating Seasonal Biases
 
-To investigate biases caused by the season, or the time of year, we can make use of the date data in the ratings. As looking at individual days or weeks leads to a very fine grained analysis, while we are more interested in trends as the progress throughout an entire year, we have filtered out the just month from this date.
+To investigate biases caused the time of year, we use the date data in the reviews. We use only the month from these dates, as looking at individual days or weeks leads to a fine grained analysis, while we are more interested in trends throughout the entire year.
+
+To analyze the data we use grouping, e.g. grouping by month or grouping by month and beer style. This make it simple to find interesting statistics for the grouped data, such as the amount of reviews per month and beer style. To compare the amount of reviews for different beer styles throughout the year, we ranked the reviews by review count, allowing us to filter out beer styles which experience a big change in rank compared to their more stable counterparts, indicating changing popularity.
+
+After confirming that the season has no effect on the average rating in general, we proceeded to figure out which beers are more popular per season, think "summery" vs "wintery" beers, and then checked if this popularity had any effect on the rating.
+
 
 ### Investigating Experiential Biases
 
-To investigate potential experiential biases we need to join the data frame containing ratings with the data frame containing the experienced users. We can then plot the relation with the number of reviews given and the relative distribution of ratings provided.
+To investigate potential experiential biases we join the ratings data with data on experienced users. We can then plot the relation with the number of reviews submitted and the relative distribution of ratings provided.
 
-This is followed by a second analysis done on the 10 most reviewed beer types from BeerAdvocate and RateBeer. The goal is to determine if previously identified general tendencies can also be observed on a sample, find if experienced or new reviewers influence ratings the most. Experience here is defined arbitrarily as a threshold number of 15 given reviews per reviewer. The results are expressed as boxplots to compare the distribution of ratings for experienced, new and all reviewers.
+Furthermore, we analyse the 10 most reviewed beer types from the two datasets. The goal is to determine if previously identified general tendencies can also be observed on a sample, find if experienced or new reviewers influence ratings the most. Experience here is defined using a threshold of 15 reviews submitted. The results are expressed as boxplots to compare the distribution of ratings for experienced, new and all reviewers.
 
-We can also create a more sophisticated definition of 'experienced' based on the words used by the users and compare these two groups using various statistics.
-
+We can also create a more sophisticated definition of experience based on the words used by the users and compare these two groups using various statistics.
 
 ---
 
@@ -79,7 +83,7 @@ We can also create a more sophisticated definition of 'experienced' based on the
 
 - **Anthony:** Experience Bias
 - **Benedikt:** Neural network training and design, Locational Bias
-- **David:** Seasonality Analysis, GitHub Pages setup, website finalization
+- **David:** Seasonality Analysis, GitHub Pages Setup, Website Finalization
 - **Gabriella:** Experience Bias, Seasonality Bias
 - **Sven:** Locational Bias, Language-Based Experience Bias
 
