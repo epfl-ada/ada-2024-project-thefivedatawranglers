@@ -4,10 +4,10 @@
 ---
 
 ## Abstract
-Customer reviews of a product is an important source for assessing and improving its quality. Companies are now better equipped than ever to evaluate how products are received by their customers and what improvements could be made, thanks to the vast amount of online reviews available.
-However, online reviews can also greatly influence a product's success – or failure. Rarely do we buy anything without checking its reviews.
+Customer reviews of a product is an important source for improving its quality. Companies are now better equipped than ever to evaluate how products are received by their customers and what improvements could be made, thanks to the vast amount of online reviews.
+However, reviews can also greatly influence a product's success. Rarely do we buy anything without checking its reviews.
 This also applies to the beer market, perhaps even more so, because taste is something people have always enjoyed discussing – especially after having a drink.
-However, as beer reviewers may be biased, we will explore some potential biases that might be present in the reviews. This question is relevant both to breweries that aim to brew high-quality beer and maximize sales, as well as to buyers who want to drink the best beer possible and rely on reviews.
+However, as beer reviewers may be biased, we will explore some biases that might be present in the reviews. Identifying these biases is interesting for breweries that aim to brew high-quality beer, as well as for buyers who want to drink the best beer possible and rely on reviews.
 Therefore, in our data analysis, we aim to determine which factors related to the reviewers may influence the beer reviews.
 
 ---
@@ -16,7 +16,7 @@ Therefore, in our data analysis, we aim to determine which factors related to th
 
 We primarily focus on three factors that could influence beer ratings:
 
-1. Does the **beer’s country of origin and the user’s country** influence the rating? Could it be that in some countries domestic beers are rated more favorably than foreign ones? Do consumers from certain countries rate beers from specific other countries particularly well? Could there be a bias with distance when rating beers?
+1. Does the **beer’s country of origin and the user’s country** influence the rating? Are domestic beers rated better than foreign ones in some countries? Do consumers from certain countries rate beers from specific other countries particularly well? Could there be a bias with distance when rating beers?
 
 2. Does the **time of year** the beer is consumed affect the rating? Are there beers that are consumed much more at certain times of the year, and are these beers also rated more favorably during that time?
 
