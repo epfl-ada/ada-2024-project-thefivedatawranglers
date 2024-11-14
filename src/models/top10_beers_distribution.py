@@ -63,6 +63,6 @@ def top10beers_ratings(df_ratings, df_nb_ratings, df_name):
         showfliers=False,
     )
     plt.xticks(rotation=90)
-    ax.set_title("Top 10 Beers Ratings Distribution")
+    ax.set_title(f"Top 10 Beers Ratings Distribution {df_name}")
     ax.set_xlabel("Beer Name")
     ax.set_ylabel("Ratings")
