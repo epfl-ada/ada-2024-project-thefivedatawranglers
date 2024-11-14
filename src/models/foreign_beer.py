@@ -82,8 +82,6 @@ def plot_location_ratings(df_sum_rat, cutoff=2000):
     Reduces to only those countries with more than 2000(/cutoff) many ratings.
     Then it sorts the countries by the number of ratings coming from these countries.
     Plots the number of ratings from the remaining locations.
-    :param df_sum_rat_cutoff: result of cutoff_and_sort
-    :return: Nothing
     """
 
     df_sum_rat = df_sum_rat.to_frame()
@@ -111,7 +109,7 @@ def plot_location_ratings(df_sum_rat, cutoff=2000):
         col=1,
     )
     fig.update_yaxes(
-        title_text="Number of reviews in logarthmic scale", type="log", row=1, col=1
+        title_text="Number of reviews in logarithmic scale", type="log", row=1, col=1
     )
 
     fig.add_trace(
@@ -139,6 +137,7 @@ def merge_users_and_ratings(df_ratings, df_users):
     :param df_users: user dataset
     :return: joined df
     """
+    # using user_name here because the id is ambiguous
     return df_ratings.merge(df_users, on=["user_name"], how="inner")
 
 
@@ -189,11 +188,6 @@ def plot_mean_rating_by_location(df_plot):
     :param df_plot: result of avg_rating_by_location
     :return: Nothing
     """
-    # df_plot.plot(kind="bar", color=colors[: len(df_plot)])
-    # plt.xlabel("Location")
-    # plt.ylabel("Average rating")
-    # plt.title("Average rating given by users from different locations")
-    # plt.show()
 
     df_plot = df_plot.to_frame()
     df_plot.insert(0, "location", df_plot.index)
@@ -218,7 +212,7 @@ def plot_mean_rating_by_location(df_plot):
         col=1,
     )
     fig.update_yaxes(
-        title_text="Average rating in logarthmic scale", type="log", row=1, col=1
+        title_text="Average rating in logarithmic scale", type="log", row=1, col=1
     )
 
     fig.add_trace(
@@ -653,3 +647,28 @@ def north_south_avg(df_us_only):
     )
 
     return average_ratings
+
+
+def filter_usa_duplicates(df_rb, df_ba, cols):
+    """
+    Here we search for duplicates in the usa ratings in both datasets and remove them from the RateBeer dataset as part
+    of the data cleaning process before we to the USA-patriotism analysis
+    :param df_rb: the first return val of prepare_datasets
+    :param df_ba: the second return val of prepare_datasets
+    :param cols: the columns we match in order to say that a duplicate is found
+    :return: the cleaned RateBeer dataset
+    """
+    # we don't want to match rows with NaN values. Especially if there is a NaN-value in the text col, the probability
+    # that we find a matching one that is not the same rating is quite high
+    df_rb_cleaned = df_rb.dropna(subset=cols)
+    df_ba_cleaned = df_ba.dropna(subset=cols)
+
+    # find rows that are matching in the columns "brewery_name", "style", "abv" and "text" (/cols)
+    matching_rows = df_rb_cleaned.merge(df_ba_cleaned, on=cols, how="inner")
+
+    # how much did we remove
+    print("Number of duplicates: ", len(matching_rows))
+
+    result = df_rb[~df_rb.index.isin(matching_rows.index)]
+
+    return result
