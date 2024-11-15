@@ -6,7 +6,7 @@
 ## Abstract
 Customer reviews of a product is an important source for improving its quality. Companies are now better equipped than ever to evaluate how products are received by their customers and what improvements could be made, thanks to the vast amount of online reviews.
 However, reviews can also greatly influence a product's success. Rarely do we buy anything without checking its reviews.
-This also applies to the beer market, perhaps even more so, because taste is something people have always enjoyed discussing – especially after having a drink.
+This also applies to the beer market, because taste is something people have always enjoyed discussing – especially after having a drink.
 However, as beer reviewers may be biased, we will explore some biases that might be present in the reviews. Identifying these biases is interesting for breweries that aim to brew high-quality beer, as well as for buyers who want to drink the best beer possible and rely on reviews.
 Therefore, in our data analysis, we aim to determine which factors related to the reviewers may influence the beer reviews.
 
@@ -16,7 +16,7 @@ Therefore, in our data analysis, we aim to determine which factors related to th
 
 We primarily focus on three factors that could influence beer ratings:
 
-1. Does the **beer’s country of origin and the user’s country** influence the rating? Are domestic beers rated better than foreign ones in some countries? Do consumers from certain countries rate beers from specific other countries particularly well? Could there be a bias with distance when rating beers?
+1. Does the **beer’s and the user’s location** influence the rating? Are domestic beers rated better than foreign ones in some countries? Do consumers from certain countries rate beers from specific other countries particularly well? Could there be a bias with distance when rating beers?
 
 2. Does the **time of year** the beer is consumed affect the rating? Are there beers that are consumed much more at certain times of the year, and are these beers also rated more favorably during that time?
 
@@ -66,23 +66,23 @@ We can also create a more sophisticated definition of experience based on the wo
 ## Timeline
 
 ### December 2 – 8
-- **1st Meeting:** Resume project work, incorporate feedback, start creating visualizations for findings.
-- **2nd Meeting:** Present visualizations, brainstorm improvements
+- Resume project work, incorporate feedback, create visualizations for findings.
+- Present visualizations, brainstorm improvements.
 - Choose a neural network architecture for rating prediction, and set up GitHub Pages.
 
 ### December 9 – 14
-- **Meeting / Review**: Present updated visualizations and findings. Assign tasks for writing content and developing the final website. Begin work on these deliverables.
-- Train a neural network to predict the rating behavior of a next review based on reviewers traits (location, past experience, etc...)
+- Present updated visualizations and findings. Assign tasks for writing content and developing the final website. Begin work on these deliverables.
+- Train a Neural Network (NN) to predict the rating behavior of a next review based on reviewers traits.
 
 ### December 14 – 20
-- **Finalization:** Complete and submit Milestone P3.
+- Complete and submit Milestone P3.
 
 ---
 
 ## Division of Work
 
 - **Anthony:** Experience Bias
-- **Benedikt:** Neural network training and design, Locational Bias
+- **Benedikt:** NN training and design, Locational Bias
 - **David:** Seasonality Analysis, GitHub Pages Setup, Website Finalization
 - **Gabriella:** Experience Bias, Seasonality Bias
 - **Sven:** Locational Bias, Language-Based Experience Bias
