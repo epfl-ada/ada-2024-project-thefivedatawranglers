@@ -169,3 +169,4 @@ src/data/RateBeer/
 data/BeerAdvocate/
 data/matched_beer_data/
 data/RateBeer/
+src/data/__pycache__

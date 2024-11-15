@@ -4,10 +4,10 @@
 ---
 
 ## Abstract
-Customer reviews of a product is an important source for assessing and improving its quality. Companies are now better equipped than ever to evaluate how products are received by their customers and what improvements could be made, thanks to the vast amount of online reviews available.
-However, online reviews can also greatly influence a product's success – or failure. Rarely do we buy anything without checking its reviews.
+Customer reviews of a product is an important source for improving its quality. Companies are now better equipped than ever to evaluate how products are received by their customers and what improvements could be made, thanks to the vast amount of online reviews.
+However, reviews can also greatly influence a product's success. Rarely do we buy anything without checking its reviews.
 This also applies to the beer market, perhaps even more so, because taste is something people have always enjoyed discussing – especially after having a drink.
-However, as beer reviewers may be biased, we will explore some potential biases that might be present in the reviews. This question is relevant both to breweries that aim to brew high-quality beer and maximize sales, as well as to buyers who want to drink the best beer possible and rely on reviews.
+However, as beer reviewers may be biased, we will explore some biases that might be present in the reviews. Identifying these biases is interesting for breweries that aim to brew high-quality beer, as well as for buyers who want to drink the best beer possible and rely on reviews.
 Therefore, in our data analysis, we aim to determine which factors related to the reviewers may influence the beer reviews.
 
 ---
@@ -16,7 +16,7 @@ Therefore, in our data analysis, we aim to determine which factors related to th
 
 We primarily focus on three factors that could influence beer ratings:
 
-1. Does the **beer’s country of origin and the user’s country** influence the rating? Could it be that in some countries domestic beers are rated more favorably than foreign ones? Do consumers from certain countries rate beers from specific other countries particularly well? Could there be a bias with distance when rating beers?
+1. Does the **beer’s country of origin and the user’s country** influence the rating? Are domestic beers rated better than foreign ones in some countries? Do consumers from certain countries rate beers from specific other countries particularly well? Could there be a bias with distance when rating beers?
 
 2. Does the **time of year** the beer is consumed affect the rating? Are there beers that are consumed much more at certain times of the year, and are these beers also rated more favorably during that time?
 
@@ -48,9 +48,9 @@ As a more fine-granular assessment of the locational biases we also consider the
 
 To investigate biases caused the time of year, we use the date data in the reviews. We use only the month from these dates, as looking at individual days or weeks leads to a fine grained analysis, while we are more interested in trends throughout the entire year.
 
-To analyze the data we use grouping, e.g. grouping by month or grouping by month and beer style. This make it simple to find interesting statistics for the grouped data, such as the amount of reviews per month and beer style. To compare the amount of reviews for different beer styles throughout the year, we ranked the reviews by review count, allowing us to filter out beer styles which experience a big change in rank compared to their more stable counterparts, indicating changing popularity.
+To analyze the data we use grouping, e.g. grouping by month or grouping by month and beer style. This make it simple to find interesting statistics for the grouped data, such as the amount of reviews per month and beer style. To compare the amount of reviews for different beer styles throughout the year, we rank the reviews by review count, allowing us to filter out beer styles which experience a big change in rank compared to their more stable counterparts, indicating changing popularity.
 
-After confirming that the season has no effect on the average rating in general, we proceeded to figure out which beers are more popular per season, think "summery" vs "wintery" beers, and then checked if this popularity had any effect on the rating.
+After confirming that the season has no effect on the average rating in general, we proceed to figure out which beers are more popular per season, think "summery" vs "wintery" beers, and then check if this popularity had any effect on the rating.
 
 
 ### Investigating Experiential Biases

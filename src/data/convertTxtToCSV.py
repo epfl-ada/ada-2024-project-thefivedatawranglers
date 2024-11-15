@@ -10,7 +10,7 @@ def txt_to_csv_prog(txt_file, csv_file):
 
         # I added a tqdm progress bar because it takes so long...
         lines = file.readlines()
-        for line in tqdm(lines, desc="Verarbeite Zeilen", unit="Zeile"):
+        for line in tqdm(lines, desc="Processed lines", unit="line"):
             if line.strip() == "":
                 if current_review:
                     reviews.append(current_review)
