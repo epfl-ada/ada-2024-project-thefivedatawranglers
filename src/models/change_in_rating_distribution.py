@@ -53,7 +53,7 @@ def rating_evolution_over_time(
     ax1.set_xlabel("Year")
     ax1.set_ylabel("Relative distribution of ratings")
     ax1.set_title(f"Distribution of ratings for " + df_name)
-    ax1.legend(title="Rating Interval", bbox_to_anchor=(1.05, 1), loc="upper left")
+    ax1.legend(title="Rating Interval", bbox_to_anchor=(1.1, 1), loc="upper left")
 
     # Secondary y-axis for the count of ratings
     ax2 = ax1.twinx()  # Creates a secondary y-axis
@@ -66,7 +66,7 @@ def rating_evolution_over_time(
         label="Total Ratings",
     )
     ax2.set_ylabel("Total number of ratings")
-    ax2.legend(loc="upper left", bbox_to_anchor=(1.05, 0.9))
+    ax2.legend(loc="upper right")
 
     # Customize x-axis
     ax1.set_xticks(range(len(ratings_count_filtered.index)))
