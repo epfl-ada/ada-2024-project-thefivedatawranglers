@@ -68,11 +68,11 @@ We can also create a more sophisticated definition of experience based on the wo
 ### December 2 – 8
 - Resume project work, incorporate feedback, create visualizations for findings.
 - Present visualizations, brainstorm improvements.
-- Choose a neural network architecture for rating prediction, and set up GitHub Pages.
+- Choose a Neural Network (NN) architecture for rating prediction, and set up GitHub Pages.
 
 ### December 9 – 14
 - Present updated visualizations and findings. Assign tasks for writing content and developing the final website. Begin work on these deliverables.
-- Train a Neural Network (NN) to predict the rating behavior of a next review based on reviewers traits.
+- Train a NN to predict the rating behavior of a next review based on reviewers traits.
 
 ### December 14 – 20
 - Complete and submit Milestone P3.
