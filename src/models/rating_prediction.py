@@ -355,3 +355,5 @@ def get_features(rating_idx, exp_user_ids, rate_beer=False):
     distance = joined_df[joined_df["ratings_idx"] == rating_idx][
         "distance_user_brewery"
     ]
+
+    # converting all the features to numbers

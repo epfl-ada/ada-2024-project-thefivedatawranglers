@@ -170,3 +170,4 @@ data/BeerAdvocate/
 data/matched_beer_data/
 data/RateBeer/
 src/data/__pycache__
+src/tests/tests1.py
