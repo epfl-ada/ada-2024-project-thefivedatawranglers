@@ -1,5 +1,6 @@
 import pandas as pd
 from collections import Counter
+import numpy as np
 
 from src.data.some_dataloader import *
 from src.models.distance_analysis import (
@@ -31,6 +32,11 @@ df_location = retrieve_location_data(joined_ba_df, joined_rb_df)
 
 joined_ba_df = calculate_distances(joined_ba_df, df_location)
 joined_rb_df = calculate_distances(joined_rb_df, df_location)
+
+df_brewery_ba["month"] = pd.to_datetime(df_brewery_ba["date"], unit="s").dt.month
+df_brewery_rb["month"] = pd.to_datetime(df_brewery_rb["date"], unit="s").dt.month
+
+months = df_brewery_ba.month.unique()
 
 
 categories = {
@@ -323,10 +329,11 @@ def get_features(rating_idx, exp_user_ids, rate_beer=False):
 
     # things about this specific rating
     user_id = df_ratings[rating_idx]["user_id"]
-    style = df_ratings[rating_idx]["style"]
-    style_cat = map_to_category(style)
     timestamp_date = df_ratings[rating_idx]["date"]
     beer_id = df_ratings[rating_idx]["beer_id"]
+    month = df_ratings[rating_idx]["month"]
+    style = df_ratings[rating_idx]["style"]
+    style_cat = map_to_category(style)
 
     # calculate the word freq distributions for good and bad ratings of this user
     good_ratings_df, bad_ratings_df = split_ratings_by_threshold(
@@ -349,11 +356,56 @@ def get_features(rating_idx, exp_user_ids, rate_beer=False):
 
     is_exp = is_experienced(user_id, exp_user_ids)
 
-    df_ratings_this_beer = df_ratings[df_ratings["beer_id"] == beer_id]
-    beer_mean = df_ratings_this_beer["rating"].mean()
+    beers_ratings_df = df_ratings[df_ratings["beer_id"] == beer_id]
+    beer_mean = beers_ratings_df["rating"].mean()
 
     distance = joined_df[joined_df["ratings_idx"] == rating_idx][
         "distance_user_brewery"
     ]
 
-    # converting all the features to numbers
+    # create and normalize distribution of keywords in other ratings about this beer
+    # we don't want to include the rating we try to predict here
+    beers_ratings_df = beers_ratings_df[beers_ratings_df["user_id"] != user_id]
+    beer_distr = count_word_frequencies(beers_ratings_df, words)
+    beer_distr = {word: freq / beer_distr for word, freq in beer_distr.items()}
+
+    # converting from dicts to lists
+    good_distr = np.array([good_distr[key] for key in words])
+    bad_distr = np.array([bad_distr[key] for key in words])
+    beer_distr = np.array([beer_distr[key] for key in words])
+
+    # we also want to add an interaction feature between the beer-sided distribution of the words and th user-sided one
+    # here we use the multiplication as an interaction term
+    good_beer_product = good_distr * beer_distr
+    bad_beer_product = bad_distr * beer_distr
+
+    # ------------ converting all the features to numbers ------------ #
+    # first getting the category as one-hot encoding
+    possible_cat_vals = list(categories.keys()) + top_styles
+    one_hot_cat = [1 if category == style_cat else 0 for category in categories]
+
+    # now the month as a one-hot encoding
+    one_hot_month = [1 if month_poss == month else 0 for month_poss in categories]
+
+    is_exp = int(is_exp)
+
+    return (
+        [
+            user_mean,
+            user_style_mean,
+            user_num_ratings,
+            is_exp,
+            distance,
+            beer_mean,
+        ]  # 5 vals
+        + good_distr  # 78 vals
+        + bad_distr  # 78 vals
+        + beer_distr  # 78 vals
+        + good_beer_product  # 78 vals
+        + bad_beer_product  # 78 vals
+        + one_hot_cat  # 13 vals
+        + one_hot_month  # 12 vals
+    )  # results in a total of 420 vals
+
+
+# we will transform the distributions in a latent space of dimension 5, so the big NN will only see 55 vals
