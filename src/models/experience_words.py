@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
+from src.utils.evaluation_utils import *
 
 # these are some possibilities of what one could consider
 # "word that only experienced beer consumers would use in there beer review"
@@ -190,7 +191,7 @@ def plot_style_distribution(plot_df):
     :param plot_df: the plot df returned by calculate_style_distribution
     :return:
     """
-    plot_df.plot(kind="bar", alpha=0.7, figsize=(15, 8))
+    plot_df.plot(kind="bar", color=CB_color_cycle, alpha=0.7, figsize=(15, 8))
     plt.xlabel("Style")
     plt.ylabel("Probability")
     plt.title("Distribution of beer styles between experienced / non-experienced users")

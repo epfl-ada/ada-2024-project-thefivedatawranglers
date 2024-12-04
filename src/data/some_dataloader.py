@@ -44,7 +44,7 @@ def load_rating_data(
     rb_path="data/RateBeer/RB_ratings.csv",
 ):
     """
-    Loads rating data in pandas dataframes
+    Loads rating data with text in pandas dataframes
     :return: these dataframes
     """
     df_ba_ratings = pd.read_csv(ba_path)
