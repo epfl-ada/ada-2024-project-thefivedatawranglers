@@ -24,6 +24,7 @@ def join_users_breweries_ratings(df_users, df_breweries, df_ratings, ratebeer=Tr
     :param df_ratings: the ratings dataframe
     :return: a merged dataframe
     """
+    df_ratings["ratings_idx"] = df_ratings.index
     df_breweries.rename(columns={"id": "brewery_id"}, inplace=True)
     if ratebeer:
         df_users.dropna(subset="user_name", inplace=True)
