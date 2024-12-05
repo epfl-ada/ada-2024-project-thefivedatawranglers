@@ -188,7 +188,6 @@ negative_words = [
     "astringent",
     "thin",
     "weak",
-    "overly carbonated",
     "unbalanced",
     "bad",
     "disappointing",
@@ -225,8 +224,12 @@ exp_words1 = [
     "Krausen",
 ]
 
+words = list(set(positive_words + negative_words + exp_words1))
+print(f"We calculate the distribution for {len(words)} words")
+
 # Find the 3 most frequent beer styles
 top_styles = df_ba_ratings["style"].value_counts().nlargest(3).index.tolist()
+possible_cat_vals = list(categories.keys()) + top_styles
 
 
 def split_ratings_by_threshold(df, user_id, upper_threshold, lower_threshold):
@@ -283,9 +286,6 @@ def count_word_frequencies(df_ratings, word_list):
     return dict(word_frequencies)
 
 
-words = list(set(positive_words + negative_words + exp_words1))
-
-
 def pre_stats(df_ratings, style, date):
     df_ratings = df_ratings[df_ratings["date"] < date]
     mean = df_ratings["rating"].mean()
@@ -318,7 +318,89 @@ def categorize_beer_styles(df):
     return df
 
 
-def get_features(rating_idx, exp_user_ids, rate_beer=False):
+def safe_normalize_to_list(distribution, word_list):
+    """
+    Normalizes a dictionary of word frequencies and converts it into a list based on a predefined word list.
+
+    Parameters:
+        distribution (dict): A dictionary with words as keys and their frequencies as values.
+        word_list (list): A predefined list of words to structure the output list.
+
+    Returns:
+        list: A list of normalized frequencies corresponding to the order in word_list.
+    """
+    # Calculate the total for normalization
+    total = sum(distribution.values())
+
+    # Normalize the distribution and handle division by zero
+    normalized_distribution = {
+        key: value / total if total > 0 else 0 for key, value in distribution.items()
+    }
+
+    # Convert the normalized dictionary into a list based on the order in word_list
+    normalized_list = [normalized_distribution.get(word, 0) for word in word_list]
+
+    return normalized_list
+
+
+def init_features(
+    df_ratings,
+    user_ids,
+    beer_ids,
+    exp_user_ids,
+    word_list,
+    lower_threshold,
+    upper_threshold,
+):
+    # Prepare user statistics
+    user_stats = {}
+    for user_id in user_ids:
+        user_ratings = df_ratings[df_ratings["user_id"] == user_id]
+
+        # Filter "Good" and "Bad" ratings
+        good_ratings_df = user_ratings[user_ratings["rating"] >= upper_threshold]
+        bad_ratings_df = user_ratings[user_ratings["rating"] <= lower_threshold]
+
+        # Calculate distributions
+        good_distr = count_word_frequencies(good_ratings_df, word_list=word_list)
+        bad_distr = count_word_frequencies(bad_ratings_df, word_list=word_list)
+        # Normalize distributions
+        good_distr = safe_normalize_to_list(good_distr, word_list)
+        bad_distr = safe_normalize_to_list(bad_distr, word_list)
+
+        user_stats[user_id] = {
+            "good_distr": good_distr,
+            "bad_distr": bad_distr,
+            "is_exp": 1 if user_id in exp_user_ids else 0,
+        }
+
+    # Prepare beer statistics
+    beer_stats = {}
+    for beer_id in beer_ids:
+        beer_ratings = df_ratings[df_ratings["beer_id"] == beer_id]
+        style_cat = map_to_category(beer_ratings.iloc[0]["style"])
+
+        # Calculate word distribution
+        beer_distr = count_word_frequencies(beer_ratings, word_list=word_list)
+        beer_distr = safe_normalize_to_list(beer_distr, word_list)
+
+        # Calculate average rating
+        mean_rating = beer_ratings["rating"].mean()
+
+        one_hot_cat = [
+            1 if category == style_cat else 0 for category in possible_cat_vals
+        ]
+
+        beer_stats[beer_id] = {
+            "distr": beer_distr,
+            "mean_rating": mean_rating,
+            "one_hot_cat": one_hot_cat,
+        }
+
+    return user_stats, beer_stats
+
+
+def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
     # setting variables depending on with which dataset we are working
     if rate_beer:
         df_ratings = df_rb_ratings
@@ -329,81 +411,49 @@ def get_features(rating_idx, exp_user_ids, rate_beer=False):
 
     # things about this specific rating
     user_id = df_ratings[rating_idx]["user_id"]
-    timestamp_date = df_ratings[rating_idx]["date"]
     beer_id = df_ratings[rating_idx]["beer_id"]
+    timestamp_date = df_ratings[rating_idx]["date"]
     month = df_ratings[rating_idx]["month"]
     style = df_ratings[rating_idx]["style"]
-    style_cat = map_to_category(style)
 
-    # calculate the word freq distributions for good and bad ratings of this user
-    good_ratings_df, bad_ratings_df = split_ratings_by_threshold(
-        df_ratings, user_id, upper_threshold=3.8, lower_threshold=2.7
-    )
-    good_distr = count_word_frequencies(good_ratings_df, word_list=words)
-    bad_distr = count_word_frequencies(bad_ratings_df, word_list=words)
-    # normalizing the distributions
-    good_total = sum(good_distr.values())
-    bad_total = sum(bad_distr.values())
-    good_distr = {word: freq / good_distr for word, freq in good_distr.items()}
-    bad_distr = {word: freq / bad_distr for word, freq in bad_distr.items()}
-
-    df_ratings_cat = categorize_beer_styles(df_ratings)
+    user_info = user_stats.get(user_id, {})
+    beer_info = beer_stats.get(beer_id, {})
 
     # this calculates some statistics for this user but only for the ratings he did before doing this rating now
     user_mean, user_style_mean, user_num_ratings = pre_stats(
-        df_ratings, style, timestamp_date
+        df_ratings[df_ratings["user_id"] == user_id], style, timestamp_date
     )
-
-    is_exp = is_experienced(user_id, exp_user_ids)
-
-    beers_ratings_df = df_ratings[df_ratings["beer_id"] == beer_id]
-    beer_mean = beers_ratings_df["rating"].mean()
 
     distance = joined_df[joined_df["ratings_idx"] == rating_idx][
         "distance_user_brewery"
     ]
 
-    # create and normalize distribution of keywords in other ratings about this beer
-    # we don't want to include the rating we try to predict here
-    beers_ratings_df = beers_ratings_df[beers_ratings_df["user_id"] != user_id]
-    beer_distr = count_word_frequencies(beers_ratings_df, words)
-    beer_distr = {word: freq / beer_distr for word, freq in beer_distr.items()}
-
-    # converting from dicts to lists
-    good_distr = np.array([good_distr[key] for key in words])
-    bad_distr = np.array([bad_distr[key] for key in words])
-    beer_distr = np.array([beer_distr[key] for key in words])
-
     # we also want to add an interaction feature between the beer-sided distribution of the words and th user-sided one
     # here we use the multiplication as an interaction term
-    good_beer_product = good_distr * beer_distr
-    bad_beer_product = bad_distr * beer_distr
-
-    # ------------ converting all the features to numbers ------------ #
-    # first getting the category as one-hot encoding
-    possible_cat_vals = list(categories.keys()) + top_styles
-    one_hot_cat = [1 if category == style_cat else 0 for category in categories]
+    good_beer_product = np.array(user_info["good_distr"]) * np.array(beer_info["distr"])
+    bad_beer_product = np.array(user_info["bad_distr"]) * np.array(beer_info["distr"])
 
     # now the month as a one-hot encoding
-    one_hot_month = [1 if month_poss == month else 0 for month_poss in categories]
-
-    is_exp = int(is_exp)
+    one_hot_months = {
+        m: [1 if m == month else 0 for month in range(1, 13)] for m in range(1, 13)
+    }
+    one_hot_month = one_hot_months.get(month, [0] * 12)
 
     return (
         [
             user_mean,
             user_style_mean,
             user_num_ratings,
-            is_exp,
+            user_info.get("is_exp", 0),
             distance,
-            beer_mean,
+            beer_info.get("mean_rating", 0),
         ]  # 5 vals
-        + good_distr  # 78 vals
-        + bad_distr  # 78 vals
-        + beer_distr  # 78 vals
-        + good_beer_product  # 78 vals
-        + bad_beer_product  # 78 vals
-        + one_hot_cat  # 13 vals
+        + user_info.get("good_distr", 0)  # 78 vals
+        + user_info.get("bad_distr", 0)  # 78 vals
+        + beer_info.get("distr")  # 78 vals
+        + list(good_beer_product)  # 78 vals
+        + list(bad_beer_product)  # 78 vals
+        + beer_info.get("one_hot_cat", 0)  # 13 vals
         + one_hot_month  # 12 vals
     )  # results in a total of 420 vals
 
