@@ -11,8 +11,6 @@ from geopy.distance import geodesic as GD
 from geopy.geocoders import Nominatim
 from src.utils.evaluation_utils import US_STATES_CODES
 
-import pandas as pd
-
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
@@ -63,10 +61,10 @@ def remove_html_tags(value: str):
     return value.split("<")[0]
 
 
-def retrieve_location_data(df_ba_joined, df_rb_joined):
+def retrieve_location_data(df_ba_joined, df_rb_joined, path="data/locations.csv"):
 
-    if os.path.exists("data/locations.csv"):
-        df_locations = pd.read_csv("data/locations.csv")
+    if os.path.exists(path):
+        df_locations = pd.read_csv(path)
     else:
         geolocator = Nominatim(user_agent="beer_ratings")
         latitudes = []

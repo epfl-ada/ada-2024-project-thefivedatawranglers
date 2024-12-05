@@ -16,10 +16,12 @@ df_ba_ratings, df_rb_ratings = load_rating_data(
     rb_path="../../data" "/RateBeer" "/RB_ratings.csv",
 )
 
-df_ba_users, df_rb_users = load_user_data()
+df_ba_users, df_rb_users = load_user_data(
+    ba_path="../../data/BeerAdvocate/users.csv", rb_path="../../data/RateBeer/users.csv"
+)
 
-df_brewery_ba = load_brewery_data(brewery_path="data/BeerAdvocate/breweries.csv")
-df_brewery_rb = load_brewery_data(brewery_path="data/RateBeer/breweries.csv")
+df_brewery_ba = load_brewery_data(brewery_path="../../data/BeerAdvocate/breweries.csv")
+df_brewery_rb = load_brewery_data(brewery_path="../../data/RateBeer/breweries.csv")
 
 joined_ba_df = join_users_breweries_ratings(
     df_ba_users, df_brewery_ba, df_ba_ratings, ratebeer=False
@@ -28,15 +30,17 @@ joined_rb_df = join_users_breweries_ratings(
     df_rb_users, df_brewery_rb, df_rb_ratings, ratebeer=True
 )
 
-df_location = retrieve_location_data(joined_ba_df, joined_rb_df)
+df_location = retrieve_location_data(
+    joined_ba_df, joined_rb_df, path="../../data/locations.csv"
+)
 
 joined_ba_df = calculate_distances(joined_ba_df, df_location)
 joined_rb_df = calculate_distances(joined_rb_df, df_location)
 
-df_brewery_ba["month"] = pd.to_datetime(df_brewery_ba["date"], unit="s").dt.month
-df_brewery_rb["month"] = pd.to_datetime(df_brewery_rb["date"], unit="s").dt.month
+df_ba_ratings["month"] = pd.to_datetime(df_ba_ratings["date"], unit="s").dt.month
+df_rb_ratings["month"] = pd.to_datetime(df_rb_ratings["date"], unit="s").dt.month
 
-months = df_brewery_ba.month.unique()
+months = df_ba_ratings.month.unique()
 
 
 categories = {
@@ -349,8 +353,8 @@ def init_features(
     beer_ids,
     exp_user_ids,
     word_list,
-    lower_threshold,
-    upper_threshold,
+    lower_threshold=2.7,
+    upper_threshold=3.8,
 ):
     # Prepare user statistics
     user_stats = {}
@@ -448,14 +452,14 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
             distance,
             beer_info.get("mean_rating", 0),
         ]  # 5 vals
-        + user_info.get("good_distr", 0)  # 78 vals
-        + user_info.get("bad_distr", 0)  # 78 vals
-        + beer_info.get("distr")  # 78 vals
-        + list(good_beer_product)  # 78 vals
-        + list(bad_beer_product)  # 78 vals
+        + user_info.get("good_distr", 0)  # 77 vals
+        + user_info.get("bad_distr", 0)  # 77 vals
+        + beer_info.get("distr")  # 77 vals
+        + list(good_beer_product)  # 77 vals
+        + list(bad_beer_product)  # 77 vals
         + beer_info.get("one_hot_cat", 0)  # 13 vals
         + one_hot_month  # 12 vals
-    )  # results in a total of 420 vals
+    )  # results in a total of 415 vals
 
 
 # we will transform the distributions in a latent space of dimension 5, so the big NN will only see 55 vals
