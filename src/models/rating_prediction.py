@@ -414,11 +414,12 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
         joined_df = joined_ba_df
 
     # things about this specific rating
-    user_id = df_ratings[rating_idx]["user_id"]
-    beer_id = df_ratings[rating_idx]["beer_id"]
-    timestamp_date = df_ratings[rating_idx]["date"]
-    month = df_ratings[rating_idx]["month"]
-    style = df_ratings[rating_idx]["style"]
+    rating_row = df_ratings.loc[rating_idx]
+    user_id = rating_row["user_id"]
+    beer_id = rating_row["beer_id"]
+    timestamp_date = rating_row["date"]
+    month = rating_row["month"]
+    style = rating_row["style"]
 
     user_info = user_stats.get(user_id, {})
     beer_info = beer_stats.get(beer_id, {})
@@ -430,7 +431,8 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
 
     distance = joined_df[joined_df["ratings_idx"] == rating_idx][
         "distance_user_brewery"
-    ]
+    ].iloc[0]
+    print("Distance: ", distance)
 
     # we also want to add an interaction feature between the beer-sided distribution of the words and th user-sided one
     # here we use the multiplication as an interaction term
