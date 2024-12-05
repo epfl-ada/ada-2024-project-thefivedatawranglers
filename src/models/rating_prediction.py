@@ -4,11 +4,12 @@ import numpy as np
 
 from src.data.some_dataloader import *
 from src.models.distance_analysis import (
-    haversine_distance,
     retrieve_location_data,
     calculate_distances,
     join_users_breweries_ratings,
 )
+from src.models.experience_words import *
+from tqdm import tqdm
 
 
 df_ba_ratings, df_rb_ratings = load_rating_data(
@@ -41,6 +42,11 @@ df_ba_ratings["month"] = pd.to_datetime(df_ba_ratings["date"], unit="s").dt.mont
 df_rb_ratings["month"] = pd.to_datetime(df_rb_ratings["date"], unit="s").dt.month
 
 months = df_ba_ratings.month.unique()
+
+exp_user_ids_ba = get_experienced_users2(df_ba_ratings, exp_words1)
+df_ba_ratings["experienced_user"] = (
+    df_ba_ratings["user_id"].isin(exp_user_ids_ba).astype(int)
+)
 
 
 categories = {
@@ -351,42 +357,52 @@ def init_features(
     df_ratings,
     user_ids,
     beer_ids,
-    exp_user_ids,
     word_list,
-    lower_threshold=2.7,
+    lower_threshold=2.5,
     upper_threshold=3.8,
 ):
     # Prepare user statistics
     user_stats = {}
-    for user_id in user_ids:
+    for user_id in tqdm(user_ids, desc="Computing user stats"):
         user_ratings = df_ratings[df_ratings["user_id"] == user_id]
 
         # Filter "Good" and "Bad" ratings
-        good_ratings_df = user_ratings[user_ratings["rating"] >= upper_threshold]
-        bad_ratings_df = user_ratings[user_ratings["rating"] <= lower_threshold]
+        good_ratings_user_df = user_ratings[user_ratings["rating"] >= upper_threshold]
+        bad_ratings_user_df = user_ratings[user_ratings["rating"] <= lower_threshold]
 
         # Calculate distributions
-        good_distr = count_word_frequencies(good_ratings_df, word_list=word_list)
-        bad_distr = count_word_frequencies(bad_ratings_df, word_list=word_list)
+        good_distr_user = count_word_frequencies(
+            good_ratings_user_df, word_list=word_list
+        )
+        bad_distr_user = count_word_frequencies(
+            bad_ratings_user_df, word_list=word_list
+        )
         # Normalize distributions
-        good_distr = safe_normalize_to_list(good_distr, word_list)
-        bad_distr = safe_normalize_to_list(bad_distr, word_list)
+        good_distr_user = safe_normalize_to_list(good_distr_user, word_list)
+        bad_distr_user = safe_normalize_to_list(bad_distr_user, word_list)
 
         user_stats[user_id] = {
-            "good_distr": good_distr,
-            "bad_distr": bad_distr,
-            "is_exp": 1 if user_id in exp_user_ids else 0,
+            "good_distr_user": good_distr_user,
+            "bad_distr_user": bad_distr_user,
         }
 
     # Prepare beer statistics
     beer_stats = {}
-    for beer_id in beer_ids:
+    for beer_id in tqdm(beer_ids, desc="Computing beer stats"):
         beer_ratings = df_ratings[df_ratings["beer_id"] == beer_id]
+        good_ratings_beer_df = beer_ratings[beer_ratings["rating"] >= upper_threshold]
+        bad_ratings_beer_df = beer_ratings[beer_ratings["rating"] <= lower_threshold]
         style_cat = map_to_category(beer_ratings.iloc[0]["style"])
 
-        # Calculate word distribution
-        beer_distr = count_word_frequencies(beer_ratings, word_list=word_list)
-        beer_distr = safe_normalize_to_list(beer_distr, word_list)
+        # Calculate word distributions
+        good_distr_beer = count_word_frequencies(
+            good_ratings_beer_df, word_list=word_list
+        )
+        good_distr_beer = safe_normalize_to_list(good_distr_beer, word_list)
+        bad_distr_beer = count_word_frequencies(
+            bad_ratings_beer_df, word_list=word_list
+        )
+        bad_distr_beer = safe_normalize_to_list(bad_distr_beer, word_list)
 
         # Calculate average rating
         mean_rating = beer_ratings["rating"].mean()
@@ -396,7 +412,8 @@ def init_features(
         ]
 
         beer_stats[beer_id] = {
-            "distr": beer_distr,
+            "good_distr_beer": good_distr_beer,
+            "bad_distr_beer": bad_distr_beer,
             "mean_rating": mean_rating,
             "one_hot_cat": one_hot_cat,
         }
@@ -415,11 +432,14 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
 
     # things about this specific rating
     rating_row = df_ratings.loc[rating_idx]
+    label = rating_row["rating"]
     user_id = rating_row["user_id"]
     beer_id = rating_row["beer_id"]
     timestamp_date = rating_row["date"]
     month = rating_row["month"]
     style = rating_row["style"]
+
+    is_exp = rating_row["experienced_user"]
 
     user_info = user_stats.get(user_id, {})
     beer_info = beer_stats.get(beer_id, {})
@@ -436,8 +456,12 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
 
     # we also want to add an interaction feature between the beer-sided distribution of the words and th user-sided one
     # here we use the multiplication as an interaction term
-    good_beer_product = np.array(user_info["good_distr"]) * np.array(beer_info["distr"])
-    bad_beer_product = np.array(user_info["bad_distr"]) * np.array(beer_info["distr"])
+    interaction_good = np.array(user_info["good_distr_user"]) @ np.array(
+        beer_info["good_distr_beer"]
+    )
+    interaction_bad = np.array(user_info["bad_distr_user"]) @ np.array(
+        beer_info["bad_distr_beer"]
+    )
 
     # now the month as a one-hot encoding
     one_hot_months = {
@@ -447,21 +471,23 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
 
     return (
         [
+            label,
             user_mean,
             user_style_mean,
             user_num_ratings,
-            user_info.get("is_exp", 0),
+            is_exp,
             distance,
             beer_info.get("mean_rating", 0),
-        ]  # 5 vals
-        + user_info.get("good_distr", 0)  # 77 vals
-        + user_info.get("bad_distr", 0)  # 77 vals
-        + beer_info.get("distr")  # 77 vals
-        + list(good_beer_product)  # 77 vals
-        + list(bad_beer_product)  # 77 vals
+            interaction_good,
+            interaction_bad,
+        ]  # 8 vals
+        + user_info.get("good_distr_user", 0)  # 77 vals
+        + user_info.get("bad_distr_user", 0)  # 77 vals
+        + beer_info.get("good_distr_beer")  # 77 vals
+        + beer_info.get("bad_distr_beer")  # 77 vals
         + beer_info.get("one_hot_cat", 0)  # 13 vals
         + one_hot_month  # 12 vals
-    )  # results in a total of 415 vals
+    )  # results in a total of 341 features + 1 label => 342 values
 
 
 # we will transform the distributions in a latent space of dimension 5, so the big NN will only see 55 vals
