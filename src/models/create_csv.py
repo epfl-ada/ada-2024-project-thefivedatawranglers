@@ -35,8 +35,20 @@ def filter_beer_ratings(df, user_threshold, beer_threshold):
     valid_beers = beer_counts[beer_counts > beer_threshold].index
     df = df[df["beer_id"].isin(valid_beers)]
 
+    # keeping only entries that contain locational data
+    len_before = len(df)
+    df = df[df.index.isin(joined_ba_df["ratings_idx"])]
+    len_after = len(df)
+    print(
+        "We filtered out",
+        len_before - len_after,
+        "ratings because they had no locational data.",
+    )
+
     return df
 
+
+output_csv_file = "features_and_label.csv"
 
 column_names = [
     "label_actual_rating",
@@ -75,33 +87,41 @@ column_names += [
 ]
 print("The CSV will have", len(column_names), "columns")
 
-ratings_to_predict = filter_beer_ratings(
-    df_ba_ratings, user_threshold=650, beer_threshold=650
-)
 
-ratings_to_predict = ratings_to_predict.sample(n=1000, random_state=42)
-print("Creating features for", len(ratings_to_predict), "ratings")
-user_ids = ratings_to_predict["user_id"].tolist()
-beer_ids = ratings_to_predict["beer_id"].tolist()
+def filter_and_create_stats():
+    ratings_to_predict = filter_beer_ratings(
+        df_ba_ratings, user_threshold=20, beer_threshold=50
+    )
+    print("There are ", len(ratings_to_predict), "ratings worth predicting")
 
-user_stats, beer_stats = init_features(
-    df_ba_ratings,  # here we need the original one to take all the ratings in to account when creating the features
-    # not just the ones we're trying to predict
-    user_ids,
-    beer_ids,
-    words,
-    lower_threshold=2.7,
-    upper_threshold=3.8,
-)
+    # shuffling the data just to be sure there is no bias through the order
+    ratings_to_predict = ratings_to_predict.sample(frac=1)
+    ratings_to_predict = ratings_to_predict.iloc[0:1000]
 
-output_csv_file = "features_and_label.csv"
-with open(output_csv_file, mode="w", newline="", encoding="utf-8") as file:
-    writer = csv.writer(file)
+    print("Creating features for", len(ratings_to_predict), "ratings")
+    user_ids = ratings_to_predict["user_id"].unique().tolist()
+    beer_ids = ratings_to_predict["beer_id"].unique().tolist()
 
-    writer.writerow(column_names)
+    user_stats, beer_stats = init_features(
+        df_ba_ratings,  # here we need the original one to take all the ratings in to account when creating the features
+        # not just the ones we're trying to predict
+        user_ids,
+        beer_ids,
+        words,
+        lower_threshold=2.7,
+        upper_threshold=3.8,
+    )
+    return user_stats, beer_stats, ratings_to_predict
 
-    for idx in tqdm(ratings_to_predict.index, desc="Writing to CSV"):
-        features = get_features(idx, user_stats, beer_stats)
-        writer.writerow(features)
 
-print(f"The features where saved successfully in '{output_csv_file}'.")
+def save_csv(user_stats, beer_stats, ratings_to_predict):
+    with open(output_csv_file, mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+
+        writer.writerow(column_names)
+
+        for idx in tqdm(ratings_to_predict.index, desc="Writing to CSV"):
+            features = get_features(idx, user_stats, beer_stats)
+            writer.writerow(features)
+
+    print(f"The features where saved successfully in '{output_csv_file}'.")

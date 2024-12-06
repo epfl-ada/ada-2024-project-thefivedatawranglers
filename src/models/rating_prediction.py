@@ -452,7 +452,7 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
     distance = joined_df[joined_df["ratings_idx"] == rating_idx][
         "distance_user_brewery"
     ].iloc[0]
-    print("Distance: ", distance)
+    # print("Distance: ", distance)
 
     # we also want to add an interaction feature between the beer-sided distribution of the words and th user-sided one
     # here we use the multiplication as an interaction term
