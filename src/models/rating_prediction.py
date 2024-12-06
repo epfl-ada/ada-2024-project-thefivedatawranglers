@@ -1,6 +1,7 @@
 import pandas as pd
 from collections import Counter
 import numpy as np
+import os
 
 from src.data.some_dataloader import *
 from src.models.distance_analysis import (
@@ -361,9 +362,20 @@ def init_features(
     lower_threshold=2.5,
     upper_threshold=3.8,
 ):
-    # Prepare user statistics
+    # Load or initialize user statistics
+    user_stats_file = "user_stats.csv"
+    print("Trying to load user_stats.csv...")
+    if os.path.exists(user_stats_file):
+        existing_user_stats_df = pd.read_csv(user_stats_file)
+        existing_user_ids = set(existing_user_stats_df["user_id"])
+    else:
+        existing_user_stats_df = pd.DataFrame()
+        existing_user_ids = set()
+
+    new_user_ids = set(user_ids) - existing_user_ids
     user_stats = {}
-    for user_id in tqdm(user_ids, desc="Computing user stats"):
+
+    for user_id in tqdm(new_user_ids, desc="Computing missing user stats"):
         user_ratings = df_ratings[df_ratings["user_id"] == user_id]
 
         # Filter "Good" and "Bad" ratings
@@ -382,13 +394,34 @@ def init_features(
         bad_distr_user = safe_normalize_to_list(bad_distr_user, word_list)
 
         user_stats[user_id] = {
+            "user_id": user_id,
             "good_distr_user": good_distr_user,
             "bad_distr_user": bad_distr_user,
         }
 
-    # Prepare beer statistics
+    # Append new user stats to the CSV file
+    if user_stats:
+        new_user_stats_df = pd.DataFrame(user_stats.values())
+        user_stats_df = pd.concat(
+            [existing_user_stats_df, new_user_stats_df], ignore_index=True
+        )
+        user_stats_df.to_csv(user_stats_file, index=False)
+    else:
+        user_stats_df = existing_user_stats_df
+
+    # Load or initialize beer statistics
+    beer_stats_file = "beer_stats.csv"
+    if os.path.exists(beer_stats_file):
+        existing_beer_stats_df = pd.read_csv(beer_stats_file)
+        existing_beer_ids = set(existing_beer_stats_df["beer_id"])
+    else:
+        existing_beer_stats_df = pd.DataFrame()
+        existing_beer_ids = set()
+
+    new_beer_ids = set(beer_ids) - existing_beer_ids
     beer_stats = {}
-    for beer_id in tqdm(beer_ids, desc="Computing beer stats"):
+
+    for beer_id in tqdm(new_beer_ids, desc="Computing beer stats"):
         beer_ratings = df_ratings[df_ratings["beer_id"] == beer_id]
         good_ratings_beer_df = beer_ratings[beer_ratings["rating"] >= upper_threshold]
         bad_ratings_beer_df = beer_ratings[beer_ratings["rating"] <= lower_threshold]
@@ -412,13 +445,24 @@ def init_features(
         ]
 
         beer_stats[beer_id] = {
+            "beer_id": beer_id,
             "good_distr_beer": good_distr_beer,
             "bad_distr_beer": bad_distr_beer,
             "mean_rating": mean_rating,
             "one_hot_cat": one_hot_cat,
         }
 
-    return user_stats, beer_stats
+    # Append new beer stats to the CSV file
+    if beer_stats:
+        new_beer_stats_df = pd.DataFrame(beer_stats.values())
+        beer_stats_df = pd.concat(
+            [existing_beer_stats_df, new_beer_stats_df], ignore_index=True
+        )
+        beer_stats_df.to_csv(beer_stats_file, index=False)
+    else:
+        beer_stats_df = existing_beer_stats_df
+
+    return user_stats_df, beer_stats_df
 
 
 def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):

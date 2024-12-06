@@ -1,5 +1,6 @@
 import csv
 from src.models.rating_prediction import *
+import datetime
 
 
 def filter_beer_ratings(df, user_threshold, beer_threshold):
@@ -95,9 +96,8 @@ def filter_and_create_stats():
 
     # shuffling the data just to be sure there is no bias through the order
     ratings_to_predict = ratings_to_predict.sample(frac=1, random_state=42)
-    ratings_to_predict = ratings_to_predict.iloc[0:1000]
 
-    print("Creating features for", len(ratings_to_predict), "ratings")
+    print("Creating features for ratings")
     user_ids = ratings_to_predict["user_id"].unique().tolist()
     beer_ids = ratings_to_predict["beer_id"].unique().tolist()
 
@@ -113,18 +113,62 @@ def filter_and_create_stats():
     return user_stats, beer_stats, ratings_to_predict
 
 
-def save_csv(user_stats, beer_stats, ratings_to_predict):
-    with open(output_csv_file, mode="w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
+def get_last_completed_batch(log_file):
+    if not os.path.exists(log_file):
+        return 0
 
-        writer.writerow(column_names)
+    with open(log_file, "r", encoding="utf-8") as file:
+        lines = file.readlines()
+        if lines:
+            last_line = lines[-1].strip()
+            try:
+                return int(last_line.split(",")[0])
+            except (IndexError, ValueError):
+                return 0
+    return 0
 
-        for idx in tqdm(ratings_to_predict.index, desc="Writing to CSV"):
-            features = get_features(idx, user_stats, beer_stats)
-            writer.writerow(features)
 
-    print(f"The features where saved successfully in '{output_csv_file}'.")
+def log_batch_completion(log_file, batch_number):
+    with open(log_file, "a", encoding="utf-8") as file:
+        completion_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        file.write(f"{batch_number},{completion_time}\n")
+
+
+def save_csv_in_batches(
+    user_stats,
+    beer_stats,
+    ratings_to_predict,
+    output_csv_file,
+    log_file="batch_log.txt",
+    batch_size=5000,
+):
+    num_batches = (
+        len(ratings_to_predict) + batch_size - 1
+    ) // batch_size  # Calculate the number of batches
+
+    last_completed_batch = get_last_completed_batch(log_file)
+
+    for batch_number in range(last_completed_batch + 1, num_batches + 1):
+        batch_start = (batch_number - 1) * batch_size
+        batch_end = min(batch_start + batch_size, len(ratings_to_predict))
+
+        batch_ratings = ratings_to_predict.iloc[batch_start:batch_end]
+        batch_file_name = f"{output_csv_file}_{batch_number}.csv"
+
+        with open(batch_file_name, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+
+            writer.writerow(column_names)
+
+            for idx in tqdm(batch_ratings.index, desc=f"Writing batch {batch_number}"):
+                features = get_features(idx, user_stats, beer_stats)
+                writer.writerow(features)
+
+        log_batch_completion(log_file, batch_number)
+        print(f"Batch {batch_number} saved successfully in '{batch_file_name}'.")
 
 
 user_stats1, beer_stats1, ratings_to_predict1 = filter_and_create_stats()
-save_csv(user_stats1, beer_stats1, ratings_to_predict1)
+save_csv_in_batches(
+    user_stats1, beer_stats1, ratings_to_predict1, output_csv_file, batch_size=1000
+)
