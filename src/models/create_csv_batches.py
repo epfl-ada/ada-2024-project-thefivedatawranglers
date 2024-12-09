@@ -1,6 +1,6 @@
 import csv
 from src.models.rating_prediction import *
-import datetime
+from datetime import datetime
 
 
 def filter_beer_ratings(df, user_threshold, beer_threshold):
@@ -153,7 +153,7 @@ def save_csv_in_batches(
         batch_end = min(batch_start + batch_size, len(ratings_to_predict))
 
         batch_ratings = ratings_to_predict.iloc[batch_start:batch_end]
-        batch_file_name = f"{output_csv_file}_{batch_number}.csv"
+        batch_file_name = f"batch_no_{batch_number}.csv"
 
         with open(batch_file_name, mode="w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
