@@ -1,9 +1,12 @@
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from src.utils.evaluation_utils import *
 import pandas as pd
 from plotly.subplots import make_subplots
 from plotly import graph_objects as go
+import plotly.express as px
+from scipy.stats import t
 
 
 southern_states = [
@@ -40,6 +43,60 @@ northern_states = [
     "Vermont",
     "Wisconsin",
 ]
+
+
+state_name_to_abbreviation = {
+    "Alabama": "AL",
+    "Alaska": "AK",
+    "Arizona": "AZ",
+    "Arkansas": "AR",
+    "California": "CA",
+    "Colorado": "CO",
+    "Connecticut": "CT",
+    "Delaware": "DE",
+    "Florida": "FL",
+    "Georgia": "GA",
+    "Hawaii": "HI",
+    "Idaho": "ID",
+    "Illinois": "IL",
+    "Indiana": "IN",
+    "Iowa": "IA",
+    "Kansas": "KS",
+    "Kentucky": "KY",
+    "Louisiana": "LA",
+    "Maine": "ME",
+    "Maryland": "MD",
+    "Massachusetts": "MA",
+    "Michigan": "MI",
+    "Minnesota": "MN",
+    "Mississippi": "MS",
+    "Missouri": "MO",
+    "Montana": "MT",
+    "Nebraska": "NE",
+    "Nevada": "NV",
+    "New Hampshire": "NH",
+    "New Jersey": "NJ",
+    "New Mexico": "NM",
+    "New York": "NY",
+    "North Carolina": "NC",
+    "North Dakota": "ND",
+    "Ohio": "OH",
+    "Oklahoma": "OK",
+    "Oregon": "OR",
+    "Pennsylvania": "PA",
+    "Rhode Island": "RI",
+    "South Carolina": "SC",
+    "South Dakota": "SD",
+    "Tennessee": "TN",
+    "Texas": "TX",
+    "Utah": "UT",
+    "Vermont": "VT",
+    "Virginia": "VA",
+    "Washington": "WA",
+    "West Virginia": "WV",
+    "Wisconsin": "WI",
+    "Wyoming": "WY",
+}
 
 
 def calculate_ratings_by_location(df_users):
@@ -359,59 +416,88 @@ def change_flag(df_users_ratings_brew):
 
 def avg_scores_domestic_foreign(df_users_ratings_brew):
     """
-    Groups by user_location and is_domestic. Then calculates mean rating for both foreign and domestic beers.
+    Groups by user_location and is_domestic. Then calculates mean, std, and count for both foreign and domestic beers.
     :param df_users_ratings_brew: result of change_flag
-    :return: the grouped df.
+    :return: the grouped df with statistics.
     """
     return (
         df_users_ratings_brew.groupby(["user_location", "is_domestic"])["rating"]
-        .mean()
+        .agg(["mean", "std", "count"])
         .reset_index()
+        .rename(columns={"mean": "avg_rating", "std": "std_dev", "count": "n"})
     )
 
 
 def pivot_average_scores(df_average_scores):
     """
-    Creates separate columns for domestic and foreign ratings.
-    :param df_average_scores: the result of calculate_average_scores_domestic_vs_foreign
+    Creates separate columns for domestic and foreign ratings along with std and count.
+    :param df_average_scores: the result of avg_scores_domestic_foreign_with_stats
     :return: The new dataframe
     """
     df_pivot = df_average_scores.pivot(
-        index="user_location", columns="is_domestic", values="rating"
+        index="user_location",
+        columns="is_domestic",
+        values=["avg_rating", "std_dev", "n"],
     )
     df_pivot.columns = [
-        "Foreign",
-        "Domestic",
+        "Foreign_Avg",
+        "Domestic_Avg",
+        "Foreign_Std",
+        "Domestic_Std",
+        "Foreign_n",
+        "Domestic_n",
     ]
     return df_pivot
 
 
 def calculate_score_difference(df_pivot):
     """
-    Computes the difference between domestic and foreign ratings.
-    :param df_pivot: The result of pivot_average_scores.
-    :return: The same df but with the new column difference.
+    Computes the difference between domestic and foreign ratings and calculates confidence intervals.
+    :param df_pivot: The result of pivot_average_scores_with_stats.
+    :return: The same df but with the new column difference and CI.
     """
-    df_pivot["difference"] = (
-        df_pivot["Domestic"] - df_pivot["Foreign"]
-    )  # creating difference
+    # Calculate difference in average ratings
+    df_pivot["difference"] = df_pivot["Domestic_Avg"] - df_pivot["Foreign_Avg"]
+
+    # Calculate standard error for the difference
+    df_pivot["se_diff"] = np.sqrt(
+        (df_pivot["Domestic_Std"] ** 2) / df_pivot["Domestic_n"]
+        + (df_pivot["Foreign_Std"] ** 2) / df_pivot["Foreign_n"]
+    )
+
+    # Calculate 95% confidence intervals (using t-distribution)
+    df_pivot["ci_95"] = df_pivot["se_diff"] * t.ppf(
+        0.975, df=(df_pivot["Domestic_n"] + df_pivot["Foreign_n"] - 2)
+    )
+
     return df_pivot.sort_values(by="difference", ascending=False)
 
 
 def plot_score_difference(df_diff):
     """
-    Plots the difference between average domestic and foreign ratings grouped over user location.
-    :param df_diff: The result of calculate_score_difference
+    Plots the difference between average domestic and foreign ratings grouped over user location with confidence intervals.
+    :param df_diff: The result of calculate_score_difference_with_ci
     :return: Nothing (plots stuff)
     """
-    df_diff["difference"].plot(
-        kind="bar",
-        title="Difference Between Average Score for Domestic - Foreign Beers",
-        stacked=False,
-        figsize=(20, 10),
+    plt.figure(figsize=(20, 10))
+
+    # Bar plot
+    plt.bar(
+        df_diff.index,
+        df_diff["difference"],
+        yerr=df_diff["ci_95"],
+        capsize=5,
+        alpha=0.7,
+        color="orange",
+        label="Difference",
     )
+
+    plt.title("Difference Between Average Score for Domestic - Foreign Beers (with CI)")
     plt.xlabel("User Location")
     plt.ylabel("Difference in Average Rating")
+    plt.xticks(rotation=90)
+    plt.legend()
+    plt.tight_layout()
     plt.show()
 
 
@@ -672,3 +758,47 @@ def filter_usa_duplicates(df_rb, df_ba, cols):
     result = df_rb[~df_rb.index.isin(matching_rows.index)]
 
     return result
+
+
+def plot_avg_ratings_map(avg_ratings_per_location):
+    """
+    Plots an interactive map of the USA showing the difference in average ratings by state.
+    The color intensity reflects the difference value, and hovering over a state displays its name and value.
+
+    :param avg_ratings_per_location: DataFrame containing states and the difference in ratings.
+    :return: Nothing (plots an interactive map).
+    """
+    # Reset index to ensure "user_location" is a column
+    avg_ratings_per_location = avg_ratings_per_location.reset_index()
+
+    print(avg_ratings_per_location.head())
+
+    # Ensure the column names are meaningful for the map
+    avg_ratings_per_location.rename(
+        columns={"user_location": "State", "Difference": "Rating Difference"},
+        inplace=True,
+    )
+
+    avg_ratings_per_location["State"] = avg_ratings_per_location["State"].map(
+        state_name_to_abbreviation
+    )
+
+    print(avg_ratings_per_location.head())
+
+    # Use Plotly Express to create the map
+    fig = px.choropleth(
+        avg_ratings_per_location,
+        locations="State",  # State names in the data
+        locationmode="USA-states",  # Match state names to the USA map
+        color="Rating Difference",  # Value to represent via color
+        color_continuous_scale="Viridis",  # Color scale
+        scope="usa",  # Restrict to USA
+        title="Difference in Average Ratings by State (US Beer vs Non-US Beer)",
+        labels={"Rating Difference": "Diff (US - Non-US)"},  # Label for hover tooltip
+    )
+
+    # Customize hover data
+    fig.update_traces(hovertemplate="<b>%{location}</b><br>Difference: %{z:.2f}")
+
+    # Show the plot
+    fig.show()

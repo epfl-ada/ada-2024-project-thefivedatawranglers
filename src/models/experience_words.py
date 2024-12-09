@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
+import numpy as np
+from scipy.stats import t
 
 # these are some possibilities of what one could consider
 # "word that only experienced beer consumers would use in there beer review"
@@ -285,3 +287,164 @@ def calculate_rating_difference(df_ratings_of_exp, df_ratings_of_inexp, most_rat
     )
 
     return rating_diff_df
+
+
+def calculate_rating_difference_with_ci(
+    df_ratings_of_exp, df_ratings_of_inexp, most_rated
+):
+    """Calculate rating and distribution differences with confidence intervals between experienced and
+    non-experienced users"""
+
+    # Group by style and calculate mean, std, count for experienced users (ratings)
+    exp_group = (
+        df_ratings_of_exp[df_ratings_of_exp["style"].isin(most_rated)]
+        .groupby("style")["rating"]
+        .agg(["mean", "std", "count"])
+        .rename(columns={"mean": "exp_mean", "std": "exp_std", "count": "exp_count"})
+    )
+
+    # Group by style and calculate mean, std, count for inexperienced users (ratings)
+    inexp_group = (
+        df_ratings_of_inexp[df_ratings_of_inexp["style"].isin(most_rated)]
+        .groupby("style")["rating"]
+        .agg(["mean", "std", "count"])
+        .rename(
+            columns={"mean": "inexp_mean", "std": "inexp_std", "count": "inexp_count"}
+        )
+    )
+
+    # Calculate distributions for experienced and inexperienced users
+    exp_dist = df_ratings_of_exp[df_ratings_of_exp["style"].isin(most_rated)][
+        "style"
+    ].value_counts(normalize=True)
+    inexp_dist = df_ratings_of_inexp[df_ratings_of_inexp["style"].isin(most_rated)][
+        "style"
+    ].value_counts(normalize=True)
+
+    # Combine ratings data
+    combined_ratings = pd.concat([exp_group, inexp_group], axis=1)
+
+    # Calculate the difference in mean ratings
+    combined_ratings["Rating Difference"] = (
+        combined_ratings["exp_mean"] - combined_ratings["inexp_mean"]
+    )
+
+    # Calculate standard error of the difference
+    combined_ratings["se_diff"] = np.sqrt(
+        (combined_ratings["exp_std"] ** 2) / combined_ratings["exp_count"]
+        + (combined_ratings["inexp_std"] ** 2) / combined_ratings["inexp_count"]
+    )
+
+    # Calculate the 95% confidence interval (using t-distribution)
+    combined_ratings["ci_95"] = combined_ratings["se_diff"] * t.ppf(
+        0.975, df=(combined_ratings["exp_count"] + combined_ratings["inexp_count"] - 2)
+    )
+
+    # Combine distribution data
+    combined_dist = pd.DataFrame(
+        {"Experienced": exp_dist, "Inexperienced": inexp_dist}
+    ).fillna(0)
+
+    # Calculate difference in distributions
+    combined_dist["Difference"] = (
+        combined_dist["Experienced"] - combined_dist["Inexperienced"]
+    )
+
+    # Calculate standard errors for distributions
+    exp_total = len(df_ratings_of_exp[df_ratings_of_exp["style"].isin(most_rated)])
+    inexp_total = len(
+        df_ratings_of_inexp[df_ratings_of_inexp["style"].isin(most_rated)]
+    )
+
+    combined_dist["se_exp"] = np.sqrt(
+        (combined_dist["Experienced"] * (1 - combined_dist["Experienced"])) / exp_total
+    )
+    combined_dist["se_inexp"] = np.sqrt(
+        (combined_dist["Inexperienced"] * (1 - combined_dist["Inexperienced"]))
+        / inexp_total
+    )
+
+    # Calculate standard error for the difference in distributions
+    combined_dist["se_diff"] = np.sqrt(
+        combined_dist["se_exp"] ** 2 + combined_dist["se_inexp"] ** 2
+    )
+
+    # Calculate the 95% confidence interval for distributions
+    combined_dist["ci_95"] = combined_dist["se_diff"] * t.ppf(
+        0.975, df=(exp_total + inexp_total - 2)
+    )
+
+    return (
+        combined_ratings[["Rating Difference", "ci_95"]],
+        combined_dist[["Difference", "ci_95"]],
+    )
+
+
+def plot_combined_distribution_and_rating_difference_with_ci(
+    plot_df, rating_diff_df, dist_diff_df
+):
+    """
+    Plots the difference in the distribution of ratings over beer styles between experienced / non-experienced users
+    and also the average rating over beer styles between experienced and non-experienced
+    users with confidence intervals.
+    """
+    # Calculate the difference between the two groups for distribution
+    diff_plot_df = pd.DataFrame(
+        {"Difference": plot_df["Experienced"] - plot_df["Inexperienced"]}
+    )
+
+    # Reindex the rating_diff_df and dist_diff_df to match plot_df's index
+    rating_diff_df = rating_diff_df.reindex(diff_plot_df.index).fillna(0)
+    dist_diff_df = dist_diff_df.reindex(diff_plot_df.index).fillna(0)
+
+    # Create 2 subplots
+    fig, axes = plt.subplots(2, 1, figsize=(15, 16), sharex=True)
+
+    # Plot for the difference in the count with confidence intervals
+    axes[0].bar(
+        dist_diff_df.index, dist_diff_df["Difference"], label="Difference", width=0.9
+    )
+    axes[0].errorbar(
+        dist_diff_df.index,
+        dist_diff_df["Difference"],
+        yerr=dist_diff_df["ci_95"],
+        fmt="none",
+        ecolor="black",
+        capsize=3,
+        label="95% CI",
+    )
+    axes[0].set_xlabel("Style")
+    axes[0].set_ylabel("Probability Difference")
+    axes[0].set_title(
+        "Difference in beer style distribution between experienced and non-experienced users"
+    )
+    axes[0].tick_params(axis="x", rotation=90)
+    axes[0].legend()
+
+    # Plot for the difference in the average rating with confidence intervals
+    axes[1].bar(
+        rating_diff_df.index,
+        rating_diff_df["Rating Difference"],
+        color="orange",
+        label="Rating Difference",
+        width=0.9,
+    )
+    axes[1].errorbar(
+        rating_diff_df.index,
+        rating_diff_df["Rating Difference"],
+        yerr=rating_diff_df["ci_95"],
+        fmt="none",
+        ecolor="black",
+        capsize=3,
+        label="95% CI",
+    )
+    axes[1].set_xlabel("Style")
+    axes[1].set_ylabel("Rating Difference")
+    axes[1].set_title(
+        "Difference in average beer style rating between experienced and non-experienced users"
+    )
+    axes[1].tick_params(axis="x", rotation=90)
+    axes[1].legend()
+
+    plt.tight_layout()
+    plt.show()
