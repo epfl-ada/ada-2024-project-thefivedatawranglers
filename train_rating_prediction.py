@@ -22,6 +22,11 @@ scaler = StandardScaler()
 df_train = scaler.fit_transform(df_train)
 df_test = scaler.transform(df_test)
 
+# df_train[:, 9:317] = 0  # No text
+# df_test[:, 9:317] = 0  # No text
+# df_train[:, 330:342] = 0  # Month of review
+# df_test[:, 330:342] = 0  # Month of review
+
 # %% [markdown]
 # Dataframe shape: 342 columns
 # Overview:
@@ -71,12 +76,12 @@ class RatingModel(torch.nn.Module):
         self.first_layer = torch.nn.Linear(92, 52)
         self.second_layer = torch.nn.Linear(52, 35)
         self.third_layer = torch.nn.Linear(35, 35)
-        self.fourth_layer = torch.nn.Linear(35, 10)
-        self.fifth_layer = torch.nn.Linear(10, 1)
+        self.fourth_layer = torch.nn.Linear(35, 35)
+        self.fifth_layer = torch.nn.Linear(35, 1)
 
         self.relu = torch.nn.ReLU()
         self.sigmoid = torch.nn.Sigmoid()
-        self.dropout = torch.nn.Dropout(0.2)
+        self.dropout = torch.nn.Dropout(0.1)
 
     def forward(self, x):
         classical_biases = x[:, 1:9]
@@ -197,11 +202,11 @@ plt.plot(losses_train, label="train")
 plt.plot(losses_test, label="test")
 plt.legend()
 plt.title("Losses")
-plt.savefig("losses_15_relu_embd.png")
+plt.savefig("losses_relu_embd_15.png")
 
 plt.figure()
 plt.plot(accs_train, label="train")
 plt.plot(accs_test, label="test")
 plt.legend()
 plt.title("Accuracies")
-plt.savefig("accs_15_relu_embd.png")
+plt.savefig("accs_relu_embd_15.png")

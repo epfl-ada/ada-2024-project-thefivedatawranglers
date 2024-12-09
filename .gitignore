@@ -183,3 +183,5 @@ src/models/batch_no*
 *.png
 *.sh
 *.pth
+
+!figures/*
