@@ -2,6 +2,7 @@ import pandas as pd
 from collections import Counter
 import numpy as np
 import os
+import ast
 
 from src.data.some_dataloader import *
 from src.models.distance_analysis import (
@@ -367,6 +368,15 @@ def init_features(
     print("Trying to load user_stats.csv...")
     if os.path.exists(user_stats_file):
         existing_user_stats_df = pd.read_csv(user_stats_file)
+
+        # we need to interpret the lists that are actually saved as strings as lists again
+        existing_user_stats_df["good_distr_user"] = existing_user_stats_df[
+            "good_distr_user"
+        ].apply(ast.literal_eval)
+        existing_user_stats_df["bad_distr_user"] = existing_user_stats_df[
+            "bad_distr_user"
+        ].apply(ast.literal_eval)
+
         existing_user_ids = set(existing_user_stats_df["user_id"])
     else:
         existing_user_stats_df = pd.DataFrame()
@@ -413,6 +423,18 @@ def init_features(
     beer_stats_file = "beer_stats.csv"
     if os.path.exists(beer_stats_file):
         existing_beer_stats_df = pd.read_csv(beer_stats_file)
+
+        # we need to interpret the lists that are actually saved as strings as lists again
+        existing_beer_stats_df["good_distr_beer"] = existing_beer_stats_df[
+            "good_distr_beer"
+        ].apply(ast.literal_eval)
+        existing_beer_stats_df["bad_distr_beer"] = existing_beer_stats_df[
+            "bad_distr_beer"
+        ].apply(ast.literal_eval)
+        existing_beer_stats_df["one_hot_cat"] = existing_beer_stats_df[
+            "one_hot_cat"
+        ].apply(ast.literal_eval)
+
         existing_beer_ids = set(existing_beer_stats_df["beer_id"])
     else:
         existing_beer_stats_df = pd.DataFrame()
@@ -485,8 +507,28 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
 
     is_exp = rating_row["experienced_user"]
 
-    user_info = user_stats.get(user_id, {})
-    beer_info = beer_stats.get(beer_id, {})
+    user_info = user_stats[user_stats["user_id"] == user_id]
+    beer_info = beer_stats[beer_stats["beer_id"] == beer_id]
+
+    # using default values if an error occurs and reporting the error
+    if user_info.empty:
+        print("For some reason the user data is missing.")
+        user_good_distr = [0] * 77
+        user_bad_distr = [0] * 77
+    else:
+        user_good_distr = user_info["good_distr_user"].values[0]
+        user_bad_distr = user_info["bad_distr_user"].values[0]
+    if beer_info.empty:
+        print("For some reason the beer data is missing.")
+        beer_good_distr = [0] * 77
+        beer_bad_distr = [0] * 77
+        beer_mean_rating = 0
+        beer_one_hot_cat = [0] * 13
+    else:
+        beer_good_distr = beer_info["good_distr_beer"].values[0]
+        beer_bad_distr = beer_info["bad_distr_beer"].values[0]
+        beer_mean_rating = beer_info["mean_rating"].values[0]
+        beer_one_hot_cat = beer_info["one_hot_cat"].values[0]
 
     # this calculates some statistics for this user but only for the ratings he did before doing this rating now
     user_mean, user_style_mean, user_num_ratings = pre_stats(
@@ -500,12 +542,8 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
 
     # we also want to add an interaction feature between the beer-sided distribution of the words and th user-sided one
     # here we use the multiplication as an interaction term
-    interaction_good = np.array(user_info["good_distr_user"]) @ np.array(
-        beer_info["good_distr_beer"]
-    )
-    interaction_bad = np.array(user_info["bad_distr_user"]) @ np.array(
-        beer_info["bad_distr_beer"]
-    )
+    interaction_good = np.array(user_good_distr) @ np.array(beer_good_distr)
+    interaction_bad = np.array(user_bad_distr) @ np.array(beer_bad_distr)
 
     # now the month as a one-hot encoding
     one_hot_months = {
@@ -521,15 +559,15 @@ def get_features(rating_idx, user_stats, beer_stats, rate_beer=False):
             user_num_ratings,
             is_exp,
             distance,
-            beer_info.get("mean_rating", 0),
+            beer_mean_rating,
             interaction_good,
             interaction_bad,
         ]  # 8 vals
-        + user_info.get("good_distr_user", 0)  # 77 vals
-        + user_info.get("bad_distr_user", 0)  # 77 vals
-        + beer_info.get("good_distr_beer")  # 77 vals
-        + beer_info.get("bad_distr_beer")  # 77 vals
-        + beer_info.get("one_hot_cat", 0)  # 13 vals
+        + user_good_distr  # 77 vals
+        + user_bad_distr  # 77 vals
+        + beer_good_distr  # 77 vals
+        + beer_bad_distr  # 77 vals
+        + beer_one_hot_cat  # 13 vals
         + one_hot_month  # 12 vals
     )  # results in a total of 341 features + 1 label => 342 values
 
