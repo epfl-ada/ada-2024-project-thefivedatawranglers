@@ -452,3 +452,69 @@ def plot_combined_distribution_and_rating_difference_with_ci(
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_distribution_difference_with_ci(dist_diff_df):
+    """
+    Plots the difference in the distribution of ratings over beer styles
+    between experienced and non-experienced users with confidence intervals.
+    """
+    plt.figure(figsize=(15, 8))
+    plt.bar(
+        dist_diff_df.index, dist_diff_df["Difference"], label="Difference", width=0.9
+    )
+    plt.errorbar(
+        dist_diff_df.index,
+        dist_diff_df["Difference"],
+        yerr=dist_diff_df["ci_95"],
+        fmt="none",
+        ecolor="black",
+        capsize=3,
+        label="95% CI",
+    )
+    plt.xlabel("Style", fontsize=16)
+    plt.ylabel("Probability Difference", fontsize=16)
+    plt.title(
+        "Difference in beer style distribution between experienced and non-experienced users",
+        fontsize=16,
+    )
+    plt.xticks(rotation=90, fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(fontsize=16)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_rating_difference_with_ci(rating_diff_df):
+    """
+    Plots the difference in the average rating over beer styles
+    between experienced and non-experienced users with confidence intervals.
+    """
+    plt.figure(figsize=(15, 8))
+    plt.bar(
+        rating_diff_df.index,
+        rating_diff_df["Rating Difference"],
+        color="orange",
+        label="Rating Difference",
+        width=0.9,
+    )
+    plt.errorbar(
+        rating_diff_df.index,
+        rating_diff_df["Rating Difference"],
+        yerr=rating_diff_df["ci_95"],
+        fmt="none",
+        ecolor="black",
+        capsize=3,
+        label="95% CI",
+    )
+    plt.xlabel("Style", fontsize=16)
+    plt.ylabel("Rating Difference", fontsize=16)
+    plt.title(
+        "Difference in average beer style rating between experienced and non-experienced users",
+        fontsize=16,
+    )
+    plt.xticks(rotation=90, fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(fontsize=16)
+    plt.tight_layout()
+    plt.show()
