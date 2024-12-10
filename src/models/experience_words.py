@@ -413,13 +413,15 @@ def plot_combined_distribution_and_rating_difference_with_ci(
         capsize=3,
         label="95% CI",
     )
-    axes[0].set_xlabel("Style")
-    axes[0].set_ylabel("Probability Difference")
+    axes[0].set_xlabel("Style", fontsize=16)
+    axes[0].set_ylabel("Probability Difference", fontsize=16)
     axes[0].set_title(
-        "Difference in beer style distribution between experienced and non-experienced users"
+        "Difference in beer style distribution between experienced and non-experienced users",
+        fontsize=16,
     )
-    axes[0].tick_params(axis="x", rotation=90)
-    axes[0].legend()
+    axes[0].tick_params(axis="x", rotation=90, labelsize=16)
+    axes[0].tick_params(axis="y", labelsize=16)
+    axes[0].legend(fontsize=16)
 
     # Plot for the difference in the average rating with confidence intervals
     axes[1].bar(
@@ -438,13 +440,15 @@ def plot_combined_distribution_and_rating_difference_with_ci(
         capsize=3,
         label="95% CI",
     )
-    axes[1].set_xlabel("Style")
-    axes[1].set_ylabel("Rating Difference")
+    axes[1].set_xlabel("Style", fontsize=16)
+    axes[1].set_ylabel("Rating Difference", fontsize=16)
     axes[1].set_title(
-        "Difference in average beer style rating between experienced and non-experienced users"
+        "Difference in average beer style rating between experienced and non-experienced users",
+        fontsize=16,
     )
-    axes[1].tick_params(axis="x", rotation=90)
-    axes[1].legend()
+    axes[1].tick_params(axis="x", rotation=90, labelsize=16)
+    axes[1].tick_params(axis="y", labelsize=16)
+    axes[1].legend(fontsize=16)
 
     plt.tight_layout()
     plt.show()

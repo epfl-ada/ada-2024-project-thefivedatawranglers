@@ -268,9 +268,7 @@ def plot_mean_rating_by_location(df_plot):
         row=1,
         col=1,
     )
-    fig.update_yaxes(
-        title_text="Average rating in logarithmic scale", type="log", row=1, col=1
-    )
+    fig.update_yaxes(title_text="Average rating", type="log", row=1, col=1)
 
     fig.add_trace(
         go.Choropleth(
@@ -475,7 +473,8 @@ def calculate_score_difference(df_pivot):
 
 def plot_score_difference(df_diff):
     """
-    Plots the difference between average domestic and foreign ratings grouped over user location with confidence intervals.
+    Plots the difference between average domestic and foreign ratings grouped over
+     user location with confidence intervals.
     :param df_diff: The result of calculate_score_difference_with_ci
     :return: Nothing (plots stuff)
     """
@@ -492,11 +491,21 @@ def plot_score_difference(df_diff):
         label="Difference",
     )
 
-    plt.title("Difference Between Average Score for Domestic - Foreign Beers (with CI)")
-    plt.xlabel("User Location")
-    plt.ylabel("Difference in Average Rating")
-    plt.xticks(rotation=90)
-    plt.legend()
+    # Set labels and title with fontsize 16
+    plt.title(
+        "Difference Between Average Score for Domestic - Foreign Beers (with CI)",
+        fontsize=16,
+    )
+    plt.xlabel("User Location", fontsize=16)
+    plt.ylabel("Difference in Average Rating", fontsize=16)
+
+    # Set tick label size to 16
+    plt.xticks(rotation=90, fontsize=16)
+    plt.yticks(fontsize=16)
+
+    # Set legend font size to 16
+    plt.legend(fontsize=16)
+
     plt.tight_layout()
     plt.show()
 
