@@ -361,6 +361,62 @@ def foreign_beer_stats(df_users_ratings_brew):
     return len(foreign_beers), len(own_beers), foreign_percentage, own_percentage
 
 
+def plot_foreign_beer_stats(num_foreign, num_domestic):
+    colors = ["#1f77b4", "#ff7f0e"]  # TODO change the colors to the colorblind colors
+
+    total = num_foreign + num_domestic
+    percent_foreign = (num_foreign / total) * 100
+    percent_domestic = (num_domestic / total) * 100
+
+    fig, ax = plt.subplots(figsize=(12, 1.5))
+
+    # using a horizontal stacked bar plot (like in the US elections that's where I got this idea from)
+    ax.barh(
+        0, num_domestic, color=colors[0], label=f"Domestic ({percent_domestic:.1f}%)"
+    )
+    ax.barh(
+        0,
+        num_foreign,
+        left=num_domestic,
+        color=colors[1],
+        label=f"Foreign ({percent_foreign:.1f}%)",
+    )
+
+    ax.set_yticks(
+        []
+    )  # getting rid of the y-axis (it's just one stacked bar that we show, so we don't need it)
+    ax.set_xlim(0, total)  # scale based on the parameters
+
+    # add a line to show where the 50% mark is
+    ax.axvline(
+        x=total / 2, color="black", linestyle="--", linewidth=0.8, label="50% Mark"
+    )
+
+    # adding a small line where the two bars meet
+    ax.axvline(x=num_domestic, color="gray", linestyle="--", linewidth=0.8)
+
+    # add a caption where the two bars meet telling the percentages of each group (domestic/foreign)
+    ax.text(
+        num_domestic,
+        0.1,
+        f"{percent_domestic:.1f}% / {percent_foreign:.1f}%",
+        ha="center",
+        va="bottom",
+        fontsize=8,
+        color="black",
+    )
+
+    ax.set_title("Domestic vs. Foreign", fontsize=14)
+
+    # get rid of normal x-axis
+    ax.set_xticks([])
+
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.3), ncol=3, fontsize=8)
+
+    plt.tight_layout()
+    plt.show()
+
+
 def grouped_counts(df_users_ratings_brew):
     """
     Creating the dataframe for the plot_foreign_vs_own_beer_counts method.
