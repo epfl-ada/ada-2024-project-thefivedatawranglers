@@ -727,6 +727,39 @@ def avg_ratings_us(df_us_only):
     return df_us_only
 
 
+def plot_avg_ratings_us(group1_name, group1_avg, group2_name, group2_avg):
+    """
+    Creates a sleek horizontal bar chart to display the average scores of two groups.
+
+    Parameters:
+        group1_name (str): Name of the first group
+        group1_avg (float): Average score of the first group
+        group2_name (str): Name of the second group
+        group2_avg (float): Average score of the second group
+    """
+    groups = [group1_name, group2_name]
+    averages = [group1_avg, group2_avg]
+
+    fig, ax = plt.subplots(figsize=(10, 2))  # Make the chart wider and shorter
+    ax.barh(
+        groups, averages, height=0.3, color="skyblue", edgecolor="black"
+    )  # Thinner bars
+
+    # remove everything that is unnecessary to get a nice simplified look on the website
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.xaxis.set_visible(False)
+
+    # add values to the bars
+    for i, v in enumerate(averages):
+        ax.text(v + 0.02, i, f"{v:.2f}", va="center")
+
+    plt.tight_layout()
+    plt.show()
+
+
 def avg_ratings_per_location_us(df_us_only):
     """
     Computes the average ratings for both foreign and US beer for all the US states individually.
@@ -798,6 +831,29 @@ def north_south_avg(df_us_only):
     )
 
     return average_ratings
+
+
+def plot_north_south_diffs(df):
+    plt.style.use("ggplot")
+    ax = df.plot(kind="bar", figsize=(10, 6), edgecolor="black")
+    ax.set_title("Average Beer Ratings by Region and Category", fontsize=16)
+    ax.set_xlabel("Region", fontsize=12)
+    ax.set_ylabel("Average Rating", fontsize=12)
+
+    # customize y-axis to show only values above 3.0 because they're all higher anyway,
+    # and we want to see the difference
+    ax.set_ylim(3.0, None)
+
+    ax.legend(title="Beer Type", fontsize=10)
+
+    # add value annotations to each bar
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.2f", label_type="edge", fontsize=9)
+    # rotate x-axis labels to horizontal (looks better)
+    plt.xticks(rotation=0, fontsize=10)
+
+    plt.tight_layout()
+    plt.show()
 
 
 def filter_usa_duplicates(df_rb, df_ba, cols):
