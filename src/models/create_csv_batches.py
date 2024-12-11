@@ -1,6 +1,7 @@
 import csv
 from src.models.rating_prediction import *
 from datetime import datetime
+from src.data.some_dataloader import *
 
 
 def filter_beer_ratings(df, user_threshold, beer_threshold):
@@ -168,7 +169,70 @@ def save_csv_in_batches(
         print(f"Batch {batch_number} saved successfully in '{batch_file_name}'.")
 
 
+"""
+------------ Creating the label-feature pairs -------------
 user_stats1, beer_stats1, ratings_to_predict1 = filter_and_create_stats()
 save_csv_in_batches(
     user_stats1, beer_stats1, ratings_to_predict1, output_csv_file, batch_size=1000
 )
+"""
+
+
+def create_foreign_batches():
+    ratings_to_predict = filter_beer_ratings(
+        df_ba_ratings, user_threshold=20, beer_threshold=50
+    )
+    # shuffling the data just to be sure there is no bias through the order
+    ratings_to_predict = ratings_to_predict.sample(frac=1, random_state=42)
+
+    users_ba_df = pd.read_csv("../../data/BeerAdvocate/users.csv")
+    breweries_ba_df = pd.read_csv("../../data/BeerAdvocate/breweries.csv")
+
+    users_ba_df = users_ba_df.drop_duplicates(subset="user_id", keep="first")
+    ratings_to_predict = ratings_to_predict.merge(
+        users_ba_df[["user_id", "location"]], on="user_id", how="left"
+    )
+    ratings_to_predict.rename(columns={"location": "user_location"}, inplace=True)
+
+    breweries_ba_df.drop_duplicates(subset="brewery_id", keep="first")
+    ratings_to_predict = ratings_to_predict.merge(
+        breweries_ba_df[["brewery_id", "location"]], on="brewery_id", how="left"
+    )
+    ratings_to_predict.rename(columns={"location": "brewery_location"}, inplace=True)
+
+    ratings_to_predict["foreign_us_aggr"] = ratings_to_predict.apply(
+        lambda row: (
+            1
+            if (
+                row["user_location"] == row["brewery_location"]
+                or (
+                    "United States" in row["user_location"]
+                    and "United States" in row["brewery_location"]
+                )
+            )
+            else 0
+        ),
+        axis=1,
+    )
+
+    ratings_to_predict["foreign_us_split"] = ratings_to_predict.apply(
+        lambda row: (1 if (row["user_location"] == row["brewery_location"]) else 0),
+        axis=1,
+    )
+
+    batch_size = 1000
+    for i in range(230):
+        start_idx = i * batch_size
+        end_idx = start_idx + batch_size
+        batch_df = ratings_to_predict.iloc[start_idx:end_idx]
+
+        file_name = f"foreign_batch_{i + 1}.csv"
+        batch_df.to_csv(
+            file_name, index=False, columns=["foreign_us_aggr", "foreign_us_split"]
+        )
+
+        print(f"Batch {i + 1} saved as: {file_name}")
+
+
+# originally I forgot to put the foreign feature in there, so here is the data generating for that:
+create_foreign_batches()
