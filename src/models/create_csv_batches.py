@@ -2,6 +2,7 @@ import csv
 from src.models.rating_prediction import *
 from datetime import datetime
 from src.data.some_dataloader import *
+from tqdm import tqdm
 
 
 def filter_beer_ratings(df, user_threshold, beer_threshold):
@@ -179,15 +180,21 @@ save_csv_in_batches(
 
 
 def create_foreign_batches():
+    print("Starting execution")
+    print("Generating ratings to predict")
     ratings_to_predict = filter_beer_ratings(
         df_ba_ratings, user_threshold=20, beer_threshold=50
     )
     # shuffling the data just to be sure there is no bias through the order
     ratings_to_predict = ratings_to_predict.sample(frac=1, random_state=42)
 
+    print("Loading user and brewery data")
     users_ba_df = pd.read_csv("../../data/BeerAdvocate/users.csv")
     breweries_ba_df = pd.read_csv("../../data/BeerAdvocate/breweries.csv")
 
+    breweries_ba_df.rename(columns={"id": "brewery_id"}, inplace=True)
+
+    print("Creating the foreign features")
     users_ba_df = users_ba_df.drop_duplicates(subset="user_id", keep="first")
     ratings_to_predict = ratings_to_predict.merge(
         users_ba_df[["user_id", "location"]], on="user_id", how="left"
@@ -220,8 +227,9 @@ def create_foreign_batches():
         axis=1,
     )
 
+    print("Writing the output files")
     batch_size = 1000
-    for i in range(230):
+    for i in tqdm(range(230)):
         start_idx = i * batch_size
         end_idx = start_idx + batch_size
         batch_df = ratings_to_predict.iloc[start_idx:end_idx]
