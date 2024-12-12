@@ -175,3 +175,4 @@ src/models/user_stats.csv
 src/models/beer_stats.csv
 src/models/features_and_label.csv_1.csv
 src/models/features_and_label.csv
+src/models/foreign_batch_*
