@@ -164,11 +164,12 @@ cython_debug/
 src/data/BeerAdvocate/
 src/data/matched_beer_data/
 src/data/RateBeer/
-
+src/data/RatingPrediction
 
 data/BeerAdvocate/
 data/matched_beer_data/
 data/RateBeer/
+data/RatingPrediction
 src/data/__pycache__
 src/tests/tests1.py
 
@@ -178,4 +179,12 @@ src/models/features_and_label.csv_1.csv
 src/models/user_stats.csv
 src/models/features_and_label.csv
 src/models/batch_no*
+
 src/models/foreign_batch_*
+
+
+*.png
+*.sh
+*.pth
+
+!figures/*
