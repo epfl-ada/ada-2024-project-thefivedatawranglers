@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import re
 import numpy as np
 from scipy.stats import t
+from src.utils.evaluation_utils import *
+
 
 # these are some possibilities of what one could consider
 # "word that only experienced beer consumers would use in there beer review"
@@ -192,7 +194,7 @@ def plot_style_distribution(plot_df):
     :param plot_df: the plot df returned by calculate_style_distribution
     :return:
     """
-    plot_df.plot(kind="bar", alpha=0.7, figsize=(15, 8))
+    plot_df.plot(kind="bar", alpha=alpha_val, figsize=(15, 8))
     plt.xlabel("Style")
     plt.ylabel("Probability")
     plt.title("Distribution of beer styles between experienced / non-experienced users")
@@ -213,7 +215,7 @@ def plot_distribution_difference(plot_df):
     )
 
     # plotting
-    dif_plot_df.plot(kind="bar", alpha=0.7, figsize=(15, 8))
+    dif_plot_df.plot(kind="bar", alpha=alpha_val, figsize=(15, 8))
     plt.xlabel("Style")
     plt.ylabel("Probability Difference")
     plt.title(
@@ -244,7 +246,7 @@ def plot_combined_distribution_and_rating_difference(plot_df, rating_diff_df):
     fig, axes = plt.subplots(2, 1, figsize=(15, 16), sharex=True)
 
     # plot for the difference in the count
-    diff_plot_df.plot(kind="bar", alpha=0.7, ax=axes[0])
+    diff_plot_df.plot(kind="bar", alpha=alpha_val, ax=axes[0])
     axes[0].set_xlabel("Style")
     axes[0].set_ylabel("Probability Difference")
     axes[0].set_title(
@@ -253,7 +255,7 @@ def plot_combined_distribution_and_rating_difference(plot_df, rating_diff_df):
     axes[0].tick_params(axis="x", rotation=90)
 
     # plot for the difference in the average rating
-    rating_diff_df.plot(kind="bar", color="orange", alpha=0.7, ax=axes[1])
+    rating_diff_df.plot(kind="bar", color="orange", alpha=alpha_val, ax=axes[1])
     axes[1].set_xlabel("Style")
     axes[1].set_ylabel("Rating Difference")
     axes[1].set_title(
@@ -461,7 +463,12 @@ def plot_distribution_difference_with_ci(dist_diff_df):
     """
     plt.figure(figsize=(15, 8))
     plt.bar(
-        dist_diff_df.index, dist_diff_df["Difference"], label="Difference", width=0.9
+        dist_diff_df.index,
+        dist_diff_df["Difference"],
+        label="Difference",
+        width=0.9,
+        color=CB_color_cycle[0],
+        alpha=alpha_val,
     )
     plt.errorbar(
         dist_diff_df.index,
@@ -494,9 +501,10 @@ def plot_rating_difference_with_ci(rating_diff_df):
     plt.bar(
         rating_diff_df.index,
         rating_diff_df["Rating Difference"],
-        color="orange",
+        color=CB_color_cycle[1],
         label="Rating Difference",
         width=0.9,
+        alpha=alpha_val,
     )
     plt.errorbar(
         rating_diff_df.index,
@@ -515,6 +523,6 @@ def plot_rating_difference_with_ci(rating_diff_df):
     )
     plt.xticks(rotation=90, fontsize=16)
     plt.yticks(fontsize=16)
-    plt.legend(fontsize=16)
+    plt.legend(fontsize=16, bbox_to_anchor=(0.75, 1), loc="upper left")
     plt.tight_layout()
     plt.show()

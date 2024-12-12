@@ -362,29 +362,34 @@ def foreign_beer_stats(df_users_ratings_brew):
 
 
 def plot_foreign_beer_stats(num_foreign, num_domestic):
-    colors = ["#1f77b4", "#ff7f0e"]  # TODO change the colors to the colorblind colors
-
     total = num_foreign + num_domestic
     percent_foreign = (num_foreign / total) * 100
     percent_domestic = (num_domestic / total) * 100
 
-    fig, ax = plt.subplots(figsize=(12, 1.5))
+    fig, ax = plt.subplots(figsize=(12, 2))
 
-    # using a horizontal stacked bar plot (like in the US elections that's where I got this idea from)
+    # horizontal stacked bar plot; one horizontal bar for the left one for the right
     ax.barh(
-        0, num_domestic, color=colors[0], label=f"Domestic ({percent_domestic:.1f}%)"
+        0,
+        num_domestic,
+        color=CB_color_cycle[0],
+        label=f"Domestic ({percent_domestic:.1f}%)",
+        height=0.5,
+        alpha=alpha_val,
     )
     ax.barh(
         0,
         num_foreign,
         left=num_domestic,
-        color=colors[1],
+        color=CB_color_cycle[1],
         label=f"Foreign ({percent_foreign:.1f}%)",
+        height=0.5,
+        alpha=alpha_val,
     )
 
     ax.set_yticks(
         []
-    )  # getting rid of the y-axis (it's just one stacked bar that we show, so we don't need it)
+    )  # removing y-axis (it's just one stacked bar that we show, so we don't need it)
     ax.set_xlim(0, total)  # scale based on the parameters
 
     # add a line to show where the 50% mark is
@@ -392,26 +397,41 @@ def plot_foreign_beer_stats(num_foreign, num_domestic):
         x=total / 2, color="black", linestyle="--", linewidth=0.8, label="50% Mark"
     )
 
-    # adding a small line where the two bars meet
+    # add a small line where the two bars meet
     ax.axvline(x=num_domestic, color="gray", linestyle="--", linewidth=0.8)
 
-    # add a caption where the two bars meet telling the percentages of each group (domestic/foreign)
+    # define offsets for text positions; 2% of total width
+    offset = 0.02 * total
+
+    # add labels at the ends of each bar that show the percentage
     ax.text(
-        num_domestic,
-        0.1,
-        f"{percent_domestic:.1f}% / {percent_foreign:.1f}%",
-        ha="center",
-        va="bottom",
-        fontsize=8,
-        color="black",
+        offset,  # at the left of the bar (just not completely left, that looked bad)
+        0,
+        f"{percent_domestic:.1f}%",
+        ha="left",
+        va="center",
+        fontsize=16,
+        color="white",
+        fontweight="bold",
+    )
+    ax.text(
+        total
+        - offset,  # at the right of the bar (just not completely right, that looked bad)
+        0,
+        f"{percent_foreign:.1f}%",
+        ha="right",
+        va="center",
+        fontsize=16,
+        color="white",
+        fontweight="bold",
     )
 
     ax.set_title("Domestic vs. Foreign", fontsize=14)
 
-    # get rid of normal x-axis
+    # Remove normal x-axis
     ax.set_xticks([])
 
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.3), ncol=3, fontsize=8)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.3), ncol=3, fontsize=14)
 
     plt.tight_layout()
     plt.show()
@@ -536,33 +556,32 @@ def plot_score_difference(df_diff):
     """
     plt.figure(figsize=(20, 10))
 
-    # Bar plot
     plt.bar(
         df_diff.index,
         df_diff["difference"],
         yerr=df_diff["ci_95"],
         capsize=5,
-        alpha=0.7,
-        color="orange",
+        alpha=alpha_val,
+        color=CB_color_cycle[0],
         label="Difference",
     )
 
-    # Set labels and title with fontsize 16
     plt.title(
-        "Difference Between Average Score for Domestic - Foreign Beers (with CI)",
-        fontsize=16,
+        "Difference Between Average Score for Domestic - Foreign Beers",
+        fontsize=24,
     )
-    plt.xlabel("User Location", fontsize=16)
-    plt.ylabel("Difference in Average Rating", fontsize=16)
-
-    # Set tick label size to 16
-    plt.xticks(rotation=90, fontsize=16)
+    plt.xlabel("User Location", fontsize=24)
+    plt.ylabel("Difference in Average Rating", fontsize=24)
+    plt.xticks(rotation=90, fontsize=20)
     plt.yticks(fontsize=16)
 
-    # Set legend font size to 16
-    plt.legend(fontsize=16)
+    # there was a gap between the bars and the end of the coordinate system that didn't look well on th website,
+    # so I enforce that they start/stop with the coordinate system
+    plt.xlim([-0.5, len(df_diff.index) - 0.5])
 
+    plt.legend(fontsize=20)
     plt.tight_layout()
+
     plt.show()
 
 
@@ -835,22 +854,28 @@ def north_south_avg(df_us_only):
 
 def plot_north_south_diffs(df):
     plt.style.use("ggplot")
-    ax = df.plot(kind="bar", figsize=(10, 6), edgecolor="black")
+
+    # use the colorblind colors (but just the first two)
+    ax = df.plot(
+        kind="bar", figsize=(10, 6), edgecolor="black", color=CB_color_cycle[:2]
+    )
+
     ax.set_title("Average Beer Ratings by Region and Category", fontsize=16)
-    ax.set_xlabel("Region", fontsize=12)
-    ax.set_ylabel("Average Rating", fontsize=12)
+    ax.set_xlabel("Region", fontsize=16)
+    ax.set_ylabel("Average Rating", fontsize=16)
 
-    # customize y-axis to show only values above 3.0 because they're all higher anyway,
-    # and we want to see the difference
+    # customize y-axis to show only values above 3.0 (all the values are larger anyway)
     ax.set_ylim(3.0, None)
-
-    ax.legend(title="Beer Type", fontsize=10)
+    ax.legend(
+        title="Beer Type", fontsize=13, title_fontsize=13
+    )  # should be 14 generally, but it was overlapping than...
 
     # add value annotations to each bar
     for container in ax.containers:
-        ax.bar_label(container, fmt="%.2f", label_type="edge", fontsize=9)
-    # rotate x-axis labels to horizontal (looks better)
-    plt.xticks(rotation=0, fontsize=10)
+        ax.bar_label(container, fmt="%.2f", label_type="edge", fontsize=16)
+
+    plt.xticks(rotation=0, fontsize=16)
+    plt.yticks(fontsize=16)
 
     plt.tight_layout()
     plt.show()
