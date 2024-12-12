@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 import seaborn as sns
 from geopy.distance import geodesic as GD
 from geopy.geocoders import Nominatim
-from src.utils.evaluation_utils import US_STATES_CODES
+from src.utils.evaluation_utils import *
 
 import pandas as pd
 
@@ -175,16 +175,15 @@ def plot_distance_ratings(
 
     # Colors for plotting
     colors = [
-        "blue",
-        "red",
-        "purple",
-        "brown",
-        "hotpink",
-        "cyan",
-        "gold",
-        "darkgreen",
-        "violet",
-        "chocolate",
+        "#f781bf",
+        "#a65628",
+        "#984ea3",
+        "#999999",
+        "#e41a1c",
+        "#dede00",
+        "#377eb8",
+        "#ff7f00",
+        "#4daf4a",
     ]
 
     # Rating buckets to make the plot more readable
