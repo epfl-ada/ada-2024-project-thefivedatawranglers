@@ -170,3 +170,10 @@ data/BeerAdvocate/
 data/matched_beer_data/
 data/RateBeer/
 src/data/__pycache__
+
+src/models/batch_no_*
+src/models/foreign_batch_*
+src/models/beer_stats*
+src/models/user_stats*
+src/models/features_and_label.csv
+src/models/features_and_label.csv_1.csv
