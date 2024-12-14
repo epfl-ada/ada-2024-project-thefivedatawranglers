@@ -80,57 +80,82 @@ def cutoff_and_sort(df_sum_rat_foreign, cutoff=2000):
     return df_sum_rat_cutoff.sort_values(ascending=False)  # sort
 
 
-def plot_location_ratings(df_sum_rat, cutoff=2000):
+def plot_location_ratings(df_sum_rat, cutoff=2000, interactive=True):
     """
-    Reduces to only those countries with more than 2000(/cutoff) many ratings.
-    Then it sorts the countries by the number of ratings coming from these countries.
-    Plots the number of ratings from the remaining locations.
+    Plots the number of ratings per country, either as an interactive Plotly chart or a static Matplotlib chart.
+    :param df_sum_rat: result of accumulate_us() (expects a DataFrame with a 'nbr_ratings' column)
+    :param cutoff: Minimum number of ratings for a country to be included
+    :param interactive: Boolean flag to indicate whether to use Plotly (True) or Matplotlib (False)
+    :return: None
     """
-
+    # ensure the data is in DataFrame format
     df_sum_rat = df_sum_rat.to_frame()
     df_sum_rat.insert(0, "location", df_sum_rat.index)
     df_sum_rat.reset_index(drop=True, inplace=True)
     df_sum_rat.sort_values(ascending=False, by="nbr_ratings", inplace=True)
 
+    # filter by cutoff
     df_sum_rat_cutoff = df_sum_rat[df_sum_rat["nbr_ratings"] > cutoff]
 
-    rows = 1
-    cols = 2
-    fig = make_subplots(
-        rows=rows,
-        cols=cols,
-        specs=[[{"type": "xy"}, {"type": "choropleth"}]],
-    )
+    if interactive:  # if we create it for the website
+        rows = 1
+        cols = 2
+        fig = make_subplots(
+            rows=rows,
+            cols=cols,
+            specs=[[{"type": "xy"}, {"type": "choropleth"}]],
+        )
 
-    fig.add_trace(
-        go.Bar(
-            x=df_sum_rat_cutoff["location"],
-            y=df_sum_rat_cutoff["nbr_ratings"],
-            marker=dict(color=colors * (len(df_sum_rat_cutoff) + 1 // len(colors))),
-        ),
-        row=1,
-        col=1,
-    )
-    fig.update_yaxes(
-        title_text="Number of reviews in logarithmic scale", type="log", row=1, col=1
-    )
+        # creating bar chart (with color-blind-friendly color scheme)
+        fig.add_trace(
+            go.Bar(
+                x=df_sum_rat_cutoff["location"],
+                y=df_sum_rat_cutoff["nbr_ratings"],
+                marker=dict(color=CB_color_cycle[0]),
+            ),
+            row=1,
+            col=1,
+        )
+        fig.update_yaxes(
+            title_text="Number of reviews in logarithmic scale",
+            type="log",
+            row=1,
+            col=1,
+        )
 
-    fig.add_trace(
-        go.Choropleth(
-            locations=df_sum_rat["location"],
-            locationmode="country names",
-            z=df_sum_rat["nbr_ratings"],
-            text="Number of reviews on linear scale",
-        ),
-        row=1,
-        col=2,
-    )
+        # creating map chart
+        fig.add_trace(
+            go.Choropleth(
+                locations=df_sum_rat["location"],
+                locationmode="country names",
+                z=df_sum_rat["nbr_ratings"],
+                text="Number of reviews on linear scale",
+            ),
+            row=1,
+            col=2,
+        )
 
-    fig.update_layout(
-        title_text="Number of ratings per country",
-    )
+        fig.update_layout(
+            title_text="Number of ratings per country",
+        )
 
-    fig.show()
+        fig.show()
+    else:  # if we create it for the GitHub preview of jupyter notebooks
+        # extract locations and corresponding ratings
+        locations = df_sum_rat_cutoff["location"].values
+        ratings = df_sum_rat_cutoff["nbr_ratings"].values
+
+        # create bar chart
+        plt.figure(figsize=(12, 6))
+        plt.bar(locations, ratings, color=CB_color_cycle[0])
+        plt.yscale("log")
+        plt.ylabel("Number of reviews (log scale)")
+        plt.xlabel("Location")
+        plt.title("Number of ratings per country")
+        plt.xticks(rotation=45, ha="right")
+
+        plt.tight_layout()
+        plt.show()
 
 
 def merge_users_and_ratings(df_ratings, df_users):
@@ -192,11 +217,13 @@ def plot_mean_rating_by_location(df_plot):
     :return: Nothing
     """
 
+    # convert input data to a DataFrame and prepare it for plotting
     df_plot = df_plot.to_frame()
     df_plot.insert(0, "location", df_plot.index)
     df_plot.reset_index(drop=True, inplace=True)
     df_plot.sort_values(ascending=False, by="rating", inplace=True)
 
+    # define layout of subplots
     rows = 1
     cols = 2
     fig = make_subplots(
@@ -205,25 +232,27 @@ def plot_mean_rating_by_location(df_plot):
         specs=[[{"type": "xy"}, {"type": "choropleth"}]],
     )
 
+    # add bar chart
     fig.add_trace(
         go.Bar(
             x=df_plot["location"],
             y=df_plot["rating"],
-            marker=dict(color=colors * (len(df_plot) + 1 // len(colors))),
+            marker=dict(color=CB_color_cycle[0]),
         ),
         row=1,
         col=1,
     )
     fig.update_yaxes(
-        title_text="Average rating in logarithmic scale", type="log", row=1, col=1
+        title_text="Average rating (in logarithmic scale)", type="log", row=1, col=1
     )
 
+    # map chart
     fig.add_trace(
         go.Choropleth(
             locations=df_plot["location"],
             locationmode="country names",
             z=df_plot["rating"],
-            text="Average rating on linear scale",
+            text="Average rating (on linear scale)",
         ),
         row=1,
         col=2,
@@ -236,42 +265,111 @@ def plot_mean_rating_by_location(df_plot):
     fig.show()
 
 
-def plot_mean_rating_and_rating_count(df_plot, top50, log_scale=True):
+def plot_bar_chart(df_plot, save=True, interactive=True):
     """
-    Almost the same function as plot_mean_rating_by_location but this time we also plot the rating count, so we can see,
-    although we already filtered the countries, which bars are based on a lot of data. We normally use a log scale here,
-    because the US dominates the dataset and even after the filtering there are some countries with just around 2000
-    ratings.
+    plots the mean rating as a bar chart, either interactively (using plotly) or statically (using Matplotlib).
+    The second option is give nas well as plotly plots are not visible in the GitHub preview.
+    :param df_plot: result of avg_rating_by_location
+    :param save: whether we want to save or show the plot
+    :param interactive: whether to create an interactive plotly plot or a static matplotlib plot
+    :return: Nothing (just plots)
+    """
+
+    df_plot = df_plot.to_frame()
+    df_plot.insert(0, "location", df_plot.index)
+    df_plot.reset_index(drop=True, inplace=True)
+    df_plot.sort_values(ascending=False, by="rating", inplace=True)
+
+    if interactive:
+        # interactive plotly plot
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    x=df_plot["location"],
+                    y=df_plot["rating"],
+                    marker=dict(
+                        color=["#636EFA", "#EF553B", "#00CC96"]
+                        * ((len(df_plot) + 1) // 3)
+                    ),
+                )
+            ]
+        )
+
+        fig.update_yaxes(title_text="Average rating", type="log")
+        fig.update_layout(
+            title_text="Average Rating Per Country (Bar Chart)",
+            xaxis=dict(tickangle=90),
+        )
+
+        if save:
+            fig.write_html("src/plots/bar_chart_avg_rating.html")
+        else:
+            fig.show()
+
+    else:
+        # Static matplotlib plot
+        plt.figure(figsize=(10, 6))
+        plt.bar(
+            df_plot["location"],
+            df_plot["rating"],
+            color=["#636EFA", "#EF553B", "#00CC96"] * ((len(df_plot) + 1) // 3),
+        )
+        plt.yscale("log")
+        plt.xlabel("Location", fontsize=12)
+        plt.ylabel("Average Rating", fontsize=12)
+        plt.title("Average Rating Per Country", fontsize=14)
+        plt.xticks(rotation=90)
+        plt.tight_layout()
+
+        if save:
+            plt.savefig("src/plots/bar_chart_avg_rating.png")
+        else:
+            plt.show()
+
+
+def plot_mean_rating_and_rating_count(
+    df_plot, top50, log_scale=True, include_line=True
+):
+    """
+    Almost the same function as plot_mean_rating_by_location but this time we also plot the rating count,
+    so we can see, although we already filtered the countries, which bars are based on a lot of data. Also,
+    we don't do it interactevily here (GitHub won't let us do this) We normally use a log scale here, because the US
+    dominates the dataset and even after the filtering there are some countries with just around 2000 ratings.
     :param df_plot: the result of avg_rating_by_location
     :param top50: the second return val of filter_top_countries
     :param log_scale: boolean whether to plot the count in a log scale or linear
-    :return: Nothing
+    :param include_line: boolean whether to include the line graph for the count of ratings :return: Nothing
+    :returns None (just plots)
     """
     fig, ax1 = plt.subplots(
         figsize=(12, 4), dpi=100
     )  # need subplots for barchart and line chart showing number of ratings from that country
+
     # plotting the bar chart
-    df_plot.plot(kind="bar", color=colors[: len(df_plot)], ax=ax1)
+    df_plot.plot(kind="bar", color=CB_color_cycle[0], ax=ax1)
     ax1.set_xlabel("Location")
     ax1.set_ylabel("Average grade")
     ax1.set_title("Average grade given from users from diff. locations")
-    # plotting the line
-    ax2 = ax1.twinx()  # second axis for the number of ratings from that country
-    top50_counts = top50[df_plot.index]  # bring top50 in right order
-    ax2.plot(
-        df_plot.index,
-        top50_counts,
-        color="red",
-        marker="o",
-        linestyle="-",
-        label="Count",
-    )
-    ax2.set_ylabel("Count of Ratings")
 
-    if log_scale:
-        ax2.set_yscale("log")
+    if include_line:
+        # plotting the line
+        ax2 = ax1.twinx()  # second axis for the number of ratings from that country
+        top50_counts = top50[df_plot.index]  # bring top50 in right order
+        ax2.plot(
+            df_plot.index,
+            top50_counts,
+            color="red",
+            marker="o",
+            linestyle="-",
+            label="Count",
+        )
+        ax2.set_ylabel("Count of Ratings")
 
-    ax2.legend(loc="upper right")
+        if log_scale:
+            ax2.set_yscale("log")
+
+        ax2.legend(loc="upper right")
+
     plt.show()
 
 
