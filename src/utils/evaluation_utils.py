@@ -43,6 +43,8 @@ CB_color_cycle = [
     "#dede00",
 ]  # this is a palette for color-blind people made by thriveth (https://gist.github.com/thriveth/8560036)
 
+alpha_val = 1  # have a global alpha value for bars etc. in plots
+
 US_STATES_CODES = {
     "Alabama": "AL",
     "Alaska": "AK",

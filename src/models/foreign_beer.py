@@ -1,9 +1,12 @@
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 from src.utils.evaluation_utils import *
 import pandas as pd
 from plotly.subplots import make_subplots
 from plotly import graph_objects as go
+import plotly.express as px
+from scipy.stats import t
 
 
 southern_states = [
@@ -306,6 +309,90 @@ def foreign_beer_stats(df_users_ratings_brew):
     return len(foreign_beers), len(own_beers), foreign_percentage, own_percentage
 
 
+def plot_foreign_beer_stats(num_foreign, num_domestic):
+    """
+    Plots a horizontal bar plot showing the proportion of domestic vs foreign beers in ratings.
+    This was first created for the website for a more visually pleasing explanation of the relation
+    than just showing numbers, but then I thought it might be good for the notebook as well.
+    :param num_foreign: number of domestic beers
+    :param num_domestic: number of foreign beers
+    :return: None (just plots)
+    """
+    total = num_foreign + num_domestic
+    percent_foreign = (num_foreign / total) * 100
+    percent_domestic = (num_domestic / total) * 100
+
+    fig, ax = plt.subplots(figsize=(12, 2))
+
+    # horizontal stacked bar plot; one horizontal bar for the left one for the right
+    ax.barh(
+        0,
+        num_domestic,
+        color=CB_color_cycle[0],
+        label=f"Domestic ({percent_domestic:.1f}%)",
+        height=0.5,
+        alpha=alpha_val,
+    )
+    ax.barh(
+        0,
+        num_foreign,
+        left=num_domestic,
+        color=CB_color_cycle[1],
+        label=f"Foreign ({percent_foreign:.1f}%)",
+        height=0.5,
+        alpha=alpha_val,
+    )
+
+    ax.set_yticks(
+        []
+    )  # removing y-axis (it's just one stacked bar that we show, so we don't need it)
+    ax.set_xlim(0, total)  # scale based on the parameters
+
+    # add a line to show where the 50% mark is
+    ax.axvline(
+        x=total / 2, color="black", linestyle="--", linewidth=0.8, label="50% Mark"
+    )
+
+    # add a small line where the two bars meet
+    ax.axvline(x=num_domestic, color="gray", linestyle="--", linewidth=0.8)
+
+    # define offsets for text positions; 2% of total width
+    offset = 0.02 * total
+
+    # add labels at the ends of each bar that show the percentage
+    ax.text(
+        offset,  # at the left of the bar (just not completely left, that looked bad)
+        0,
+        f"{percent_domestic:.1f}%",
+        ha="left",
+        va="center",
+        fontsize=16,
+        color="white",
+        fontweight="bold",
+    )
+    ax.text(
+        total
+        - offset,  # at the right of the bar (just not completely right, that looked bad)
+        0,
+        f"{percent_foreign:.1f}%",
+        ha="right",
+        va="center",
+        fontsize=16,
+        color="white",
+        fontweight="bold",
+    )
+
+    ax.set_title("Domestic vs. Foreign", fontsize=14)
+
+    # Remove normal x-axis
+    ax.set_xticks([])
+
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.3), ncol=3, fontsize=14)
+
+    plt.tight_layout()
+    plt.show()
+
+
 def grouped_counts(df_users_ratings_brew):
     """
     Creating the dataframe for the plot_foreign_vs_own_beer_counts method.
@@ -345,7 +432,7 @@ def plot_foreign_vs_own_beer_counts(df_grouped_counts):
 def change_flag(df_users_ratings_brew):
     """
     Inverts the foreign flag and calls it is_domestic.
-    This is basically a compatibility method to make the transition from Sven's to David's code easier.
+    This is basically a compatibility wrapper to make the transition from Sven's to David's code easier.
     :param df_users_ratings_brew: result of merge_ratings_with_breweries
     :return: The changed df.
     """
@@ -359,59 +446,98 @@ def change_flag(df_users_ratings_brew):
 
 def avg_scores_domestic_foreign(df_users_ratings_brew):
     """
-    Groups by user_location and is_domestic. Then calculates mean rating for both foreign and domestic beers.
+    Groups by user_location and is_domestic. Then calculates mean, std, and count for both foreign and domestic beers.
     :param df_users_ratings_brew: result of change_flag
-    :return: the grouped df.
+    :return: the grouped df with statistics.
     """
     return (
         df_users_ratings_brew.groupby(["user_location", "is_domestic"])["rating"]
-        .mean()
+        .agg(["mean", "std", "count"])
         .reset_index()
+        .rename(columns={"mean": "avg_rating", "std": "std_dev", "count": "n"})
     )
 
 
 def pivot_average_scores(df_average_scores):
     """
-    Creates separate columns for domestic and foreign ratings.
-    :param df_average_scores: the result of calculate_average_scores_domestic_vs_foreign
+    Creates separate columns for domestic and foreign ratings along with std and count.
+    :param df_average_scores: the result of avg_scores_domestic_foreign_with_stats
     :return: The new dataframe
     """
     df_pivot = df_average_scores.pivot(
-        index="user_location", columns="is_domestic", values="rating"
+        index="user_location",
+        columns="is_domestic",
+        values=["avg_rating", "std_dev", "n"],
     )
     df_pivot.columns = [
-        "Foreign",
-        "Domestic",
+        "Foreign_Avg",
+        "Domestic_Avg",
+        "Foreign_Std",
+        "Domestic_Std",
+        "Foreign_n",
+        "Domestic_n",
     ]
     return df_pivot
 
 
 def calculate_score_difference(df_pivot):
     """
-    Computes the difference between domestic and foreign ratings.
-    :param df_pivot: The result of pivot_average_scores.
-    :return: The same df but with the new column difference.
+    Computes the difference between domestic and foreign ratings and calculates confidence intervals.
+    :param df_pivot: The result of pivot_average_scores_with_stats.
+    :return: The same df but with the new column difference and CI.
     """
-    df_pivot["difference"] = (
-        df_pivot["Domestic"] - df_pivot["Foreign"]
-    )  # creating difference
+    # Calculate difference in average ratings
+    df_pivot["difference"] = df_pivot["Domestic_Avg"] - df_pivot["Foreign_Avg"]
+
+    # Calculate standard error for the difference
+    df_pivot["se_diff"] = np.sqrt(
+        (df_pivot["Domestic_Std"] ** 2) / df_pivot["Domestic_n"]
+        + (df_pivot["Foreign_Std"] ** 2) / df_pivot["Foreign_n"]
+    )
+
+    # Calculate 95% confidence intervals (using t-distribution)
+    df_pivot["ci_95"] = df_pivot["se_diff"] * t.ppf(
+        0.975, df=(df_pivot["Domestic_n"] + df_pivot["Foreign_n"] - 2)
+    )
+
     return df_pivot.sort_values(by="difference", ascending=False)
 
 
 def plot_score_difference(df_diff):
     """
-    Plots the difference between average domestic and foreign ratings grouped over user location.
-    :param df_diff: The result of calculate_score_difference
+    Plots the difference between average domestic and foreign ratings grouped over
+     user location with confidence intervals.
+    :param df_diff: The result of calculate_score_difference_with_ci
     :return: Nothing (plots stuff)
     """
-    df_diff["difference"].plot(
-        kind="bar",
-        title="Difference Between Average Score for Domestic - Foreign Beers",
-        stacked=False,
-        figsize=(20, 10),
+    plt.figure(figsize=(20, 10))
+
+    plt.bar(
+        df_diff.index,
+        df_diff["difference"],
+        yerr=df_diff["ci_95"],
+        capsize=5,
+        alpha=alpha_val,
+        color=CB_color_cycle[0],
+        label="Difference",
     )
-    plt.xlabel("User Location")
-    plt.ylabel("Difference in Average Rating")
+
+    plt.title(
+        "Difference Between Average Score for Domestic - Foreign Beers",
+        fontsize=24,
+    )
+    plt.xlabel("User Location", fontsize=24)
+    plt.ylabel("Difference in Average Rating", fontsize=24)
+    plt.xticks(rotation=90, fontsize=20)
+    plt.yticks(fontsize=16)
+
+    # there was a gap between the bars and the end of the coordinate system that didn't look well on th website,
+    # so I enforce that they start/stop with the coordinate system
+    plt.xlim([-0.5, len(df_diff.index) - 0.5])
+
+    plt.legend(fontsize=20)
+    plt.tight_layout()
+
     plt.show()
 
 
@@ -534,7 +660,7 @@ def merge_with_brewery(
     :param df_ba_users_ratings_us_only: second return value of prepare_datasets
     :param df_rb_brew: the RateBeer brewery dataset
     :param df_ba_brew: the BeerAdvocate brewery dataset
-    :return:
+    :return: the merged dataframe
     """
 
     # joining with brewery data
@@ -649,6 +775,40 @@ def north_south_avg(df_us_only):
     return average_ratings
 
 
+def plot_north_south_diffs(avg_ratings_df):
+    """
+
+    :param avg_ratings_df: the average ratings dataframe returned by north_south_avg
+    :return: None (just plots)
+    """
+    plt.style.use("ggplot")
+
+    # use the colorblind colors (but just the first two)
+    ax = avg_ratings_df.plot(
+        kind="bar", figsize=(10, 6), edgecolor="black", color=CB_color_cycle[:2]
+    )
+
+    ax.set_title("Average Beer Ratings by Region and Category", fontsize=16)
+    ax.set_xlabel("Region", fontsize=16)
+    ax.set_ylabel("Average Rating", fontsize=16)
+
+    # customize y-axis to show only values above 3.0 (all the values are larger anyway)
+    ax.set_ylim(3.0, None)
+    ax.legend(
+        title="Beer Type", fontsize=13, title_fontsize=13
+    )  # should be 14 generally, but it was overlapping than...
+
+    # add value annotations to each bar
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.2f", label_type="edge", fontsize=16)
+
+    plt.xticks(rotation=0, fontsize=16)
+    plt.yticks(fontsize=16)
+
+    plt.tight_layout()
+    plt.show()
+
+
 def filter_usa_duplicates(df_rb, df_ba, cols):
     """
     Here we search for duplicates in the usa ratings in both datasets and remove them from the RateBeer dataset as part
@@ -672,3 +832,44 @@ def filter_usa_duplicates(df_rb, df_ba, cols):
     result = df_rb[~df_rb.index.isin(matching_rows.index)]
 
     return result
+
+
+def plot_avg_ratings_map(avg_ratings_per_location):
+    """
+    Plots an interactive map of the USA showing the difference in average ratings by state.
+    The color intensity reflects the difference value, and hovering over a state displays its name and value.
+
+    :param avg_ratings_per_location: DataFrame containing states and the difference in ratings.
+    :return: Nothing (plots an interactive map).
+    """
+
+    avg_ratings_per_location = avg_ratings_per_location.reset_index()
+
+    avg_ratings_per_location.rename(
+        columns={"user_location": "State", "Difference": "Rating Difference"},
+        inplace=True,
+    )
+
+    avg_ratings_per_location["State"] = avg_ratings_per_location["State"].map(
+        US_STATES_CODES
+    )
+
+    print(avg_ratings_per_location.head())
+
+    # create map
+    fig = px.choropleth(
+        avg_ratings_per_location,
+        locations="State",
+        locationmode="USA-states",
+        color="Rating Difference",  # the color shall express the value
+        color_continuous_scale="Viridis",  # on the website we use the Viridis scale for every map - it looked best
+        scope="usa",  # Restrict to USA
+        title="Difference in Average Ratings by State (US Beer vs Non-US Beer)",
+        labels={"Rating Difference": "Diff (US - Non-US)"},  # Label for hover tooltip
+    )
+
+    # Customize hover data
+    fig.update_traces(hovertemplate="<b>%{location}</b><br>Difference: %{z:.2f}")
+
+    # Show the plot
+    fig.show()

@@ -1,6 +1,10 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
+import numpy as np
+from scipy.stats import t  # for CIs
+from src.utils.evaluation_utils import *
+
 
 # these are some possibilities of what one could consider
 # "word that only experienced beer consumers would use in there beer review"
@@ -147,7 +151,7 @@ def split_by_experience(df_ratings, exp_user_ids):
     """
     # we don't need the text attribute in the further analysis and it is very big
     df_ratings_wo_text = df_ratings.drop(columns=["text"])
-    # splitting the dataframe via the id list givem
+    # splitting the dataframe via the id list given
     df_ratings_of_exp = df_ratings_wo_text[
         df_ratings_wo_text["user_id"].isin(exp_user_ids)
     ]
@@ -159,7 +163,7 @@ def split_by_experience(df_ratings, exp_user_ids):
 
 def calculate_style_distribution(df_ratings_of_exp, df_ratings_of_inexp, top_n=25):
     """
-    Calculates the empirical distribution of ratings over the style attribute for both datframes
+    Calculates the empirical distribution of ratings over the style attribute for both dataframes
     :param df_ratings_of_exp: dataframe of experienced users
     :param df_ratings_of_inexp: dataframe of inexperienced users
     :param top_n: the number of beer styles we want to look at
@@ -264,7 +268,14 @@ def plot_combined_distribution_and_rating_difference(plot_df, rating_diff_df):
 
 
 def calculate_rating_difference(df_ratings_of_exp, df_ratings_of_inexp, most_rated):
-    """Calculate rating difference between experienced and non-experienced users over styles"""
+    """
+    computes rating difference between experienced and non-experienced users over styles
+    :param df_ratings_of_exp: the ratings dataframe of the experienced users
+    :param df_ratings_of_inexp: the ratings dataframe of the inexp users
+    :param most_rated: he most rated beer styles
+    :return: the dataframe containing the rating difference between experienced and non-experienced users over styles
+    """
+
     # average rating per beer style for experienced users
     avg_ratings_exp = (
         df_ratings_of_exp[df_ratings_of_exp["style"].isin(most_rated)]
@@ -285,3 +296,173 @@ def calculate_rating_difference(df_ratings_of_exp, df_ratings_of_inexp, most_rat
     )
 
     return rating_diff_df
+
+
+def calculate_rating_difference_ci(df_ratings_of_exp, df_ratings_of_inexp, most_rated):
+    """
+    calculates rating and distribution differences with CIs between experienced and
+    non-experienced users for the next two plots (plotted by the methods
+    plot_distribution_difference_ci and plot_rating_difference_ci)
+    :param df_ratings_of_exp: the ratings dataframe of the experienced users
+    :param df_ratings_of_inexp: the ratings dataframe of the inexperienced users
+    :param most_rated: the most rated beer styles (we plot them from left to right
+    meaning the most rated beer style is the first bar)
+    :return: The dataframes for the rating differences and the count differences + the CIs for the plots
+    (plot_distribution_difference_ci and plot_rating_difference_ci use those)
+    """
+
+    # group by beer style and compute mean, std, count for experienced users
+    exp_group = (
+        df_ratings_of_exp[df_ratings_of_exp["style"].isin(most_rated)]
+        .groupby("style")["rating"]
+        .agg(["mean", "std", "count"])
+        .rename(columns={"mean": "exp_mean", "std": "exp_std", "count": "exp_count"})
+    )
+
+    # group by beer style and compute mean, std, count for inexp users
+    inexp_group = (
+        df_ratings_of_inexp[df_ratings_of_inexp["style"].isin(most_rated)]
+        .groupby("style")["rating"]
+        .agg(["mean", "std", "count"])
+        .rename(
+            columns={"mean": "inexp_mean", "std": "inexp_std", "count": "inexp_count"}
+        )
+    )
+
+    # compute distributions
+    exp_dist = df_ratings_of_exp[df_ratings_of_exp["style"].isin(most_rated)][
+        "style"
+    ].value_counts(normalize=True)
+    inexp_dist = df_ratings_of_inexp[df_ratings_of_inexp["style"].isin(most_rated)][
+        "style"
+    ].value_counts(normalize=True)
+
+    combined_ratings = pd.concat(
+        [exp_group, inexp_group], axis=1
+    )  # combine experienced and inexp users
+
+    combined_ratings["Rating Difference"] = (
+        combined_ratings["exp_mean"] - combined_ratings["inexp_mean"]
+    )  # we plot the difference
+
+    combined_ratings["se_diff"] = np.sqrt(
+        (combined_ratings["exp_std"] ** 2) / combined_ratings["exp_count"]
+        + (combined_ratings["inexp_std"] ** 2) / combined_ratings["inexp_count"]
+    )  # for the CIs we use the standard error of the difference
+
+    combined_ratings["ci_95"] = combined_ratings["se_diff"] * t.ppf(
+        0.975, df=(combined_ratings["exp_count"] + combined_ratings["inexp_count"] - 2)
+    )  # we plot a 95% CI using the t-distribution
+
+    combined_dist = pd.DataFrame(
+        {"Experienced": exp_dist, "Inexperienced": inexp_dist}
+    ).fillna(0)
+
+    # Calculate difference in distributions
+    combined_dist["Difference"] = (
+        combined_dist["Experienced"] - combined_dist["Inexperienced"]
+    )
+
+    # compute standard errors for distributions
+    exp_total = len(df_ratings_of_exp[df_ratings_of_exp["style"].isin(most_rated)])
+    inexp_total = len(
+        df_ratings_of_inexp[df_ratings_of_inexp["style"].isin(most_rated)]
+    )
+    combined_dist["se_exp"] = np.sqrt(
+        (combined_dist["Experienced"] * (1 - combined_dist["Experienced"])) / exp_total
+    )
+    combined_dist["se_inexp"] = np.sqrt(
+        (combined_dist["Inexperienced"] * (1 - combined_dist["Inexperienced"]))
+        / inexp_total
+    )
+
+    # compute standard error for the difference in distributions
+    combined_dist["se_diff"] = np.sqrt(
+        combined_dist["se_exp"] ** 2 + combined_dist["se_inexp"] ** 2
+    )
+
+    # compute the 95% confidence interval for distributions (again using t-distribution)
+    combined_dist["ci_95"] = combined_dist["se_diff"] * t.ppf(
+        0.975, df=(exp_total + inexp_total - 2)
+    )
+
+    return (
+        combined_ratings[["Rating Difference", "ci_95"]],
+        combined_dist[["Difference", "ci_95"]],
+    )
+
+
+def plot_distribution_difference_ci(distr_diff_df):
+    """
+    plots the difference in the distribution of ratings over beer styles
+    between experienced and inexp users with CIs.
+    :param distr_diff_df: the second return val of calculate_rating_difference_ci
+    :return: None (just plots)
+    """
+    plt.figure(figsize=(15, 8))
+    plt.bar(
+        distr_diff_df.index,
+        distr_diff_df["Difference"],
+        label="Difference",
+        width=0.9,
+        color=CB_color_cycle[0],
+        alpha=alpha_val,
+    )
+    plt.errorbar(
+        distr_diff_df.index,
+        distr_diff_df["Difference"],
+        yerr=distr_diff_df["ci_95"],
+        fmt="none",
+        ecolor="black",
+        capsize=3,
+        label="95% CI",
+    )
+    plt.xlabel("Style", fontsize=16)
+    plt.ylabel("Probability Difference", fontsize=16)
+    plt.title(
+        "Difference in beer style distribution between experienced and non-experienced users",
+        fontsize=16,
+    )
+    plt.xticks(rotation=90, fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(fontsize=16)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_rating_difference_ci(rating_diff_df):
+    """
+    plots the difference in the average rating over beer styles
+    between experienced and inexp users with CIs.
+    :param rating_diff_df: the first return val of calculate_rating_difference_ci
+    :return: None (just plots)
+    """
+    plt.figure(figsize=(15, 8))
+    plt.bar(
+        rating_diff_df.index,
+        rating_diff_df["Rating Difference"],
+        color=CB_color_cycle[1],
+        label="Rating Difference",
+        width=0.9,
+        alpha=alpha_val,
+    )
+    plt.errorbar(
+        rating_diff_df.index,
+        rating_diff_df["Rating Difference"],
+        yerr=rating_diff_df["ci_95"],
+        fmt="none",
+        ecolor="black",
+        capsize=3,
+        label="95% CI",
+    )
+    plt.xlabel("Style", fontsize=16)
+    plt.ylabel("Rating Difference", fontsize=16)
+    plt.title(
+        "Difference in average beer style rating between experienced and non-experienced users",
+        fontsize=16,
+    )
+    plt.xticks(rotation=90, fontsize=16)
+    plt.yticks(fontsize=16)
+    plt.legend(fontsize=16, bbox_to_anchor=(0.75, 1), loc="upper left")
+    plt.tight_layout()
+    plt.show()
