@@ -287,10 +287,7 @@ def plot_bar_chart(df_plot, save=True, interactive=True):
                 go.Bar(
                     x=df_plot["location"],
                     y=df_plot["rating"],
-                    marker=dict(
-                        color=["#636EFA", "#EF553B", "#00CC96"]
-                        * ((len(df_plot) + 1) // 3)
-                    ),
+                    marker=dict(color=CB_color_cycle[0]),
                 )
             ]
         )
@@ -312,9 +309,8 @@ def plot_bar_chart(df_plot, save=True, interactive=True):
         plt.bar(
             df_plot["location"],
             df_plot["rating"],
-            color=["#636EFA", "#EF553B", "#00CC96"] * ((len(df_plot) + 1) // 3),
+            color=CB_color_cycle[0],
         )
-        plt.yscale("log")
         plt.xlabel("Location", fontsize=12)
         plt.ylabel("Average Rating", fontsize=12)
         plt.title("Average Rating Per Country", fontsize=14)
