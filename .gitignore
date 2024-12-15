@@ -169,6 +169,7 @@ src/data/RateBeer/
 data/BeerAdvocate/
 data/matched_beer_data/
 data/RateBeer/
+data/RatingPrediction/
 src/data/__pycache__
 
 src/models/batch_no_*
@@ -177,3 +178,6 @@ src/models/beer_stats*
 src/models/user_stats*
 src/models/features_and_label.csv
 src/models/features_and_label.csv_1.csv
+
+*.png
+sbatch_train_model.sh
