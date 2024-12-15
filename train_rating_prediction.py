@@ -46,6 +46,8 @@ df_test = scaler.transform(df_test)
 # - "bad_distr_beer"  # 77 vals, df.columns[240:317]
 # - "one_hot_cat"   # 13 vals, df.columns[317:330]
 # - one_hot_month  # 12 vals, df.columns[330:342]
+# - "foreign_us_aggr" # 1 val, df.columns[342]
+# - "foreign_us_split" # 1 val, df.columns[343]
 #
 # => 342 columns
 #
@@ -73,7 +75,7 @@ class RatingModel(torch.nn.Module):
         self.embd_good_word_beer = torch.nn.Linear(77, 15)
         self.embd_bad_word_beer = torch.nn.Linear(77, 15)
 
-        self.first_layer = torch.nn.Linear(92, 52)
+        self.first_layer = torch.nn.Linear(94, 52)
         self.second_layer = torch.nn.Linear(52, 35)
         self.third_layer = torch.nn.Linear(35, 35)
         self.fourth_layer = torch.nn.Linear(35, 35)
@@ -91,6 +93,8 @@ class RatingModel(torch.nn.Module):
         beer_bad_words = x[:, 240:317]
         beer_cat = x[:, 317:330]
         month = x[:, 330:342]
+        foreign_us_aggr = x[:, 342]
+        foreign_us_split = x[:, 343]
 
         user_good_words = self.relu(self.embd_good_word_user(user_good_words))
         user_bad_words = self.relu(self.embd_bad_word_user(user_bad_words))
@@ -106,6 +110,8 @@ class RatingModel(torch.nn.Module):
                 beer_good_words,
                 beer_cat,
                 month,
+                foreign_us_aggr,
+                foreign_us_split,
             ],
             dim=1,
         )
