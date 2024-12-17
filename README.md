@@ -89,6 +89,6 @@ We can also create a more sophisticated definition of experience based on the wo
 
 ---
 
-## website
+## Website
 We present our results and data story on this website:
 https://davidholzwarth.github.io/the-five-data-wranglers/
