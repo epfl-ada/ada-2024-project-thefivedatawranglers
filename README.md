@@ -80,12 +80,13 @@ We can also create a more sophisticated definition of experience based on the wo
 ---
 
 ## Division of Work
-
+Everyone has contributed to the initial data analysis and the writing of the final data story.
+Besides this, responsabilities during the project were roughly distributed as follows:
 - **Anthony:** Experience Bias
-- **Benedikt:** NN training and design, Locational Bias
+- **Benedikt:** NN, Locational Bias
 - **David:** Seasonality Analysis, GitHub Pages Setup, Website Finalization
 - **Gabriella:** Experience Bias, Seasonality Bias
-- **Sven:** Locational Bias, Language-Based Experience Bias
+- **Sven:** Locational Bias, Language-Based Experience Bias, NN
 
 ---
 
