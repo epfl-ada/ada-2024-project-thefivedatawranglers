@@ -4,7 +4,7 @@ import seaborn as sns
 from torch import unique
 
 
-def top10beers_ratings(df_ratings, df_nb_ratings, df_name, experience_threshold = 20):
+def top10beer_styles_ratings(df_ratings, df_nb_ratings, df_name, experience_threshold = 20):
     # Selecting the wanted columns and creating new df for ratings:
     filtered_ratings_df = pd.DataFrame(
         {
@@ -27,13 +27,13 @@ def top10beers_ratings(df_ratings, df_nb_ratings, df_name, experience_threshold 
     # Merging the ratings with their respective BA or RB users_df via the 'user_id' column
     filtered_ratings_df = pd.merge(users_df, filtered_ratings_df, on="user_id")
 
-    # Classifying by the number of reviews given per beer
+    # Classifying by the number of reviews given per beer style
     valuecount = pd.DataFrame(
         filtered_ratings_df["beer_style"].value_counts().reset_index()
     )
     valuecount.columns = ["beer_style", "count"]
 
-    # Saving the 10 most reviewed beers
+    # Saving the 10 most reviewed beer styles
     top_10_styles = valuecount.head(10)
 
     # Selecting the rows from the BA or RB ratings that match with the Top_10 BA or RB respectively
@@ -82,5 +82,9 @@ def top10beers_ratings(df_ratings, df_nb_ratings, df_name, experience_threshold 
     print('Percentage of Experienced reviewers (>= 50 given reviews):', percentage_experienced)
     print("Percentage of New reviewers (<50 given reviews):", percentage_new)
     print("Total:", percentage_total)
+    print(50*'-')
+    print("Experienced reviewers (>= 50 given reviews)", experienced)
+    print("New reviewers (<50 given reviews):", new)
+    print("Total:", total)
 
 
