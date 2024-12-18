@@ -93,3 +93,7 @@ Besides this, responsabilities during the project were roughly distributed as fo
 ## Website
 We present our results and data story on this website:
 https://davidholzwarth.github.io/the-five-data-wranglers/
+
+---
+## ChatGPT
+We've used ChatGPT for simple tasks like creating JavaScript scripts for animation on the website and cleaning up python scripts.
