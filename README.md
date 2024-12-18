@@ -96,5 +96,5 @@ https://davidholzwarth.github.io/the-five-data-wranglers/
 
 ---
 ## Generative AI
-We used ChatGPT for simple tasks like creating JavaScript scripts for animation on the website.
+We used ChatGPT for simple tasks like creating JavaScript scripts for animation on the website and cleaning up some methods.
 We used GitHub Copilot to help set up the website.
