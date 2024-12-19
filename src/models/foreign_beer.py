@@ -889,7 +889,7 @@ def plot_north_south_diffs(avg_ratings_df):
     # customize y-axis to show only values above 3.0 (all the values are larger anyway)
     ax.set_ylim(3.0, None)
     ax.legend(
-        title="Beer Type", fontsize=13, title_fontsize=13
+        title="Beer Type", fontsize=10, title_fontsize=12
     )  # should be 14 generally, but it was overlapping than...
 
     # add value annotations to each bar
