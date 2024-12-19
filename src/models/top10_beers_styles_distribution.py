@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from torch import unique
 from src.utils.evaluation_utils import *
+from matplotlib.colors import to_rgba
 
 
 def top10beer_styles_ratings(
@@ -56,6 +57,9 @@ def top10beer_styles_ratings(
     top10_ratings_copy_df["Experience"] = "All"
     top10_ratings_df = pd.concat([top10_ratings_df, top10_ratings_copy_df])
 
+    # adjust alpha value in the sns way
+    adjusted_palette = [to_rgba(color, alpha=alpha_val) for color in CB_color_cycle[:3]]
+
     fig, ax1 = plt.subplots(figsize=(12, 6))
     ax = sns.boxplot(
         x="beer_style",
@@ -63,7 +67,7 @@ def top10beer_styles_ratings(
         data=top10_ratings_df,
         hue="Experience",
         showfliers=False,
-        palette=CB_color_cycle[:3],
+        palette=adjusted_palette,
     )
     plt.xticks(rotation=90)
     ax.set_title(f"Top 10 Beer Style Ratings Distribution {df_name}")

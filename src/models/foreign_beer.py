@@ -152,7 +152,7 @@ def plot_location_ratings(df_sum_rat, cutoff=2000, interactive=True):
         plt.ylabel("Number of reviews (log scale)")
         plt.xlabel("Location")
         plt.title("Number of ratings per country")
-        plt.xticks(rotation=45, ha="right")
+        plt.xticks(rotation=90, ha="right")
 
         plt.tight_layout()
         plt.show()
