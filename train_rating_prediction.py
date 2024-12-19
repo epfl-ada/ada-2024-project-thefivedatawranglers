@@ -54,11 +54,12 @@ df = scaler.fit_transform(df)
 #
 # **Inputs:**
 # 1. "Classical Biases": Is user exp?, Distance, Interaction good/bad, user mean rating,... (8 cols)
-# 2. 4x Linear Embedding(77, 5) for each of the vocab distributions (4 x 5 cols = 20)
+# 2. 4x Linear Embedding(77, 15) for each of the vocab distributions (4 x 15 cols = 60)
 # 3. Beer Category (13 cats, 13 cols)
 # 4. Month of review (12 months, 12 cols)
+# 5. Foreign (Including US states or without = 2)
 #
-# => 8 + 20 + 13 + 12 = 53 inputs <br>
+# => 8 + 60 + 13 + 12 + 2 = 95 inputs <br>
 # => 1 Regression Output or Good/Bad Output
 #
 # *Not sure about colinearity of categorical features, could probably omit one...*
@@ -75,9 +76,9 @@ class RatingModel(torch.nn.Module):
 
         self.first_layer = torch.nn.Linear(95, 52)
         self.second_layer = torch.nn.Linear(52, 35)
-        self.third_layer = torch.nn.Linear(35, 35)
-        self.fourth_layer = torch.nn.Linear(35, 35)
-        self.fifth_layer = torch.nn.Linear(35, 1)
+        self.third_layer = torch.nn.Linear(35, 25)
+        self.fourth_layer = torch.nn.Linear(25, 20)
+        self.fifth_layer = torch.nn.Linear(20, 1)
 
         self.relu = torch.nn.ReLU()
         self.sigmoid = torch.nn.Sigmoid()
