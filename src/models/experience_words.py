@@ -418,13 +418,16 @@ def plot_distribution_difference_ci(distr_diff_df):
         label="95% CI",
     )
     plt.xlabel("Style", fontsize=16)
-    plt.ylabel("Probability Difference", fontsize=16)
+    plt.ylabel("Proportion Difference", fontsize=16)
     plt.title(
         "Difference in beer style distribution between experienced and non-experienced users",
         fontsize=16,
     )
     plt.xticks(rotation=90, fontsize=16)
     plt.yticks(fontsize=16)
+    plt.grid(
+        axis="y", linestyle="--", alpha=0.7
+    )  # decided to add this so that readability on the website is given
     plt.legend(fontsize=16)
     plt.tight_layout()
     plt.show()
@@ -463,6 +466,9 @@ def plot_rating_difference_ci(rating_diff_df):
     )
     plt.xticks(rotation=90, fontsize=16)
     plt.yticks(fontsize=16)
+    plt.grid(
+        axis="y", linestyle="--", alpha=0.7
+    )  # decided to add this so that readability on the website is given
     plt.legend(fontsize=16, bbox_to_anchor=(0.75, 1), loc="upper left")
     plt.tight_layout()
     plt.show()
