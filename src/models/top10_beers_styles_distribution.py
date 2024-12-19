@@ -2,9 +2,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from torch import unique
+from src.utils.evaluation_utils import *
 
 
-def top10beer_styles_ratings(df_ratings, df_nb_ratings, df_name, experience_threshold = 20):
+def top10beer_styles_ratings(
+    df_ratings, df_nb_ratings, df_name, experience_threshold=20
+):
     # Selecting the wanted columns and creating new df for ratings:
     filtered_ratings_df = pd.DataFrame(
         {
@@ -53,7 +56,6 @@ def top10beer_styles_ratings(df_ratings, df_nb_ratings, df_name, experience_thre
     top10_ratings_copy_df["Experience"] = "All"
     top10_ratings_df = pd.concat([top10_ratings_df, top10_ratings_copy_df])
 
-
     fig, ax1 = plt.subplots(figsize=(12, 6))
     ax = sns.boxplot(
         x="beer_style",
@@ -61,30 +63,38 @@ def top10beer_styles_ratings(df_ratings, df_nb_ratings, df_name, experience_thre
         data=top10_ratings_df,
         hue="Experience",
         showfliers=False,
+        palette=CB_color_cycle[:3],
     )
     plt.xticks(rotation=90)
     ax.set_title(f"Top 10 Beer Style Ratings Distribution {df_name}")
     ax.set_xlabel("Beer Style")
     ax.set_ylabel("Ratings")
 
-    #Finding unique reviewers for statistics
-    experienced = top10_ratings_df[top10_ratings_df["Experience"] == "Experienced"].user_id.unique().size
-    new = top10_ratings_df[top10_ratings_df["Experience"] == "New"].user_id.unique().size
+    # Finding unique reviewers for statistics
+    experienced = (
+        top10_ratings_df[top10_ratings_df["Experience"] == "Experienced"]
+        .user_id.unique()
+        .size
+    )
+    new = (
+        top10_ratings_df[top10_ratings_df["Experience"] == "New"].user_id.unique().size
+    )
     total = experienced + new
 
-    #Changing to percentages
-    percentage_experienced = (experienced / total)*100
-    percentage_new = (new / total)*100
-    percentage_total = (total / total)*100
+    # Changing to percentages
+    percentage_experienced = (experienced / total) * 100
+    percentage_new = (new / total) * 100
+    percentage_total = (total / total) * 100
 
-    #Relevant statistics
-    print(f'{df_name}')
-    print('Percentage of Experienced reviewers (>= 50 given reviews):', percentage_experienced)
+    # Relevant statistics
+    print(f"{df_name}")
+    print(
+        "Percentage of Experienced reviewers (>= 50 given reviews):",
+        percentage_experienced,
+    )
     print("Percentage of New reviewers (<50 given reviews):", percentage_new)
     print("Total:", percentage_total)
-    print(50*'-')
+    print(50 * "-")
     print("Experienced reviewers (>= 50 given reviews)", experienced)
     print("New reviewers (<50 given reviews):", new)
     print("Total:", total)
-
-
