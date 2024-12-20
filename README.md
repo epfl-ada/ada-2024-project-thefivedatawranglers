@@ -61,6 +61,11 @@ Furthermore, we analyse the 10 most reviewed beer types from the two datasets. T
 
 We can also create a more sophisticated definition of experience based on the words used by the users and compare these two groups using various statistics.
 
+
+### Machine Learning - Applying knowledge about biases
+
+Finally, we want to examine how much the biases we have investigated influence users and how this knowledge can be applied in practice. To achieve this, we are developing a neural network that uses many features, including a large number of bias-related features, to predict whether a specific beer would be particularly appealing to a specific user. We are also placing special emphasis on the text data.
+
 ---
 
 ## Timeline
