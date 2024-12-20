@@ -4,7 +4,7 @@
 ---
 
 ## Abstract
-Customer reviews of a product is an important source for improving its quality. Companies are now better equipped than ever to evaluate how products are received by their customers and what improvements could be made, thanks to the vast amount of online reviews.
+Customer reviews of a product are an important source for improving its quality. Companies are now better equipped than ever to evaluate how products are received by their customers and what improvements could be made, thanks to the vast amount of online reviews.
 However, reviews can also greatly influence a product's success. Rarely do we buy anything without checking its reviews.
 This also applies to the beer market, because taste is something people have always enjoyed discussing – especially after having a drink.
 However, as beer reviewers may be biased, we will explore some biases that might be present in the reviews. Identifying these biases is interesting for breweries that aim to brew high-quality beer, as well as for buyers who want to drink the best beer possible and rely on reviews. Finally, we train a neural network to consider these biases, and find that taking them into account improves the accuracy of the model.  
