@@ -46,7 +46,7 @@ As a more fine-granular assessment of the locational biases we also consider the
 
 ### Investigating Seasonal Biases
 
-To investigate biases caused the time of year, we use the date data in the reviews. We use only the month from these dates, as looking at individual days or weeks leads to a fine grained analysis, while we are more interested in trends throughout the entire year.
+To investigate biases caused by the time of year, we use the date data in the reviews. We use only the month from these dates, as looking at individual days or weeks leads to a fine grained analysis, while we are more interested in trends throughout the entire year.
 
 To analyze the data we use grouping, e.g. grouping by month or grouping by month and beer style. This make it simple to find interesting statistics for the grouped data, such as the amount of reviews per month and beer style. To compare the amount of reviews for different beer styles throughout the year, we rank the reviews by review count, allowing us to filter out beer styles which experience a big change in rank compared to their more stable counterparts, indicating changing popularity.
 
